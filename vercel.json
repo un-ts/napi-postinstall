@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "alias": [
+    "lib-boilerplate.vercel.app"
+  ],
+  "github": {
+    "silent": true
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "trailingSlash": true
+}
