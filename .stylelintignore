@@ -2,6 +2,7 @@ coverage
 dist
 lib
 LICENSE
+*.ico
 *.cjs
 *.cts
 *.js
@@ -12,7 +13,9 @@ LICENSE
 *.mjs
 *.mts
 *.patch
+*.png
 *.ts
 *.tsx
+*.webmanifest
 *.yaml
 *.yml

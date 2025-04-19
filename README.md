@@ -13,7 +13,7 @@
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![changesets](https://img.shields.io/badge/maintained%20with-changesets-176de3.svg)](https://github.com/changesets/changesets)
 
-The `postinstall` script helper for handling native bindings in legacy `npm` versions, see also <https://github.com/npm/cli/issues/4828>
+The `postinstall` script helper for handling native bindings in legacy `npm` versions, see also [npm/cli#4828](https://github.com/npm/cli/issues/4828)
 
 ## TOC <!-- omit in toc -->
 
