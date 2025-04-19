@@ -18,7 +18,7 @@ export interface Napi {
 }
 export interface NapiInfo {
     napi: Napi;
-    version: string;
+    version?: string;
 }
 export interface PackageJson {
     name: string;

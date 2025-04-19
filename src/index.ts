@@ -187,12 +187,12 @@ export async function checkAndPreparePackage(
       ? (require(packageNameOrPackageJson + '/package.json') as PackageJson)
       : packageNameOrPackageJson
 
-  const { napi, version: napiVersion } = getNapiInfoFromPackageJson(
+  const { name, version, optionalDependencies } = packageJson
+
+  const { napi, version: napiVersion = version } = getNapiInfoFromPackageJson(
     packageJson,
     checkVersion,
   )
-
-  const { name, version, optionalDependencies } = packageJson
 
   if (checkVersion && version !== napiVersion) {
     throw new Error(
@@ -205,8 +205,7 @@ export async function checkAndPreparePackage(
   for (const target of targets) {
     const pkg = `${napi.packageName}-${target}`
 
-    /** @see {optionalDependencies} has been ensured to exist with @see {getNapiInfoFromPackageJson} */
-    if (!optionalDependencies![pkg]) {
+    if (!optionalDependencies?.[pkg]) {
       continue
     }
 
@@ -243,7 +242,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         console.error(
           `${LOG_PREFIX}Trying to install package "${pkg}" using npm`,
         )
-        installUsingNPM(name, pkg, version, subpath, nodePath)
+        installUsingNPM(name, pkg, napiVersion, subpath, nodePath)
         break
       } catch (err) {
         console.error(
@@ -254,7 +253,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(pkg, version, subpath, nodePath)
+          await downloadDirectlyFromNPM(pkg, napiVersion, subpath, nodePath)
           break
         } catch (err) {
           throw new Error(
