@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.1
+
+### Patch Changes
+
+- [#6](https://github.com/un-ts/napi-postinstall/pull/6) [`c56e93a`](https://github.com/un-ts/napi-postinstall/commit/c56e93adbb2baa13293cdd587ff05d0f855a34c2) Thanks [@JounQin](https://github.com/JounQin)! - fix: allow optional `optionalDependencies` for development
+
 ## 0.1.0
 
 ### Minor Changes
