@@ -1,2 +1,3 @@
-.yarn
+lib
+public
 package-lock.json

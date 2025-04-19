@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "un-ts/native-postinstall"
+      "repo": "un-ts/napi-postinstall"
     }
   ],
   "commit": false,

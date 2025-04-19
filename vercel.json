@@ -1,7 +1,7 @@
 {
   "version": 2,
   "alias": [
-    "native-postinstall.vercel.app"
+    "napi-postinstall.vercel.app"
   ],
   "github": {
     "silent": true
