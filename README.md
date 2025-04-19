@@ -1,11 +1,11 @@
-# lib-boilerplate
+# native-postinstall
 
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/un-ts/lib-boilerplate/ci.yml?branch=main)](https://github.com/un-ts/lib-boilerplate/actions/workflows/ci.yml?query=branch%3Amain)
-[![Codecov](https://img.shields.io/codecov/c/github/un-ts/lib-boilerplate.svg)](https://codecov.io/gh/un-ts/lib-boilerplate)
-[![type-coverage](https://img.shields.io/badge/dynamic/json.svg?label=type-coverage&prefix=%E2%89%A5&suffix=%&query=$.typeCoverage.atLeast&uri=https%3A%2F%2Fraw.githubusercontent.com%2Fun-ts%2Flib-boilerplate%2Fmain%2Fpackage.json)](https://github.com/plantain-00/type-coverage)
-[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/un-ts/lib-boilerplate)](https://coderabbit.ai)
-[![npm](https://img.shields.io/npm/v/lib-boilerplate.svg)](https://www.npmjs.com/package/lib-boilerplate)
-[![GitHub Release](https://img.shields.io/github/release/un-ts/lib-boilerplate)](https://github.com/un-ts/lib-boilerplate/releases)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/un-ts/native-postinstall/ci.yml?branch=main)](https://github.com/un-ts/native-postinstall/actions/workflows/ci.yml?query=branch%3Amain)
+[![Codecov](https://img.shields.io/codecov/c/github/un-ts/native-postinstall.svg)](https://codecov.io/gh/un-ts/native-postinstall)
+[![type-coverage](https://img.shields.io/badge/dynamic/json.svg?label=type-coverage&prefix=%E2%89%A5&suffix=%&query=$.typeCoverage.atLeast&uri=https%3A%2F%2Fraw.githubusercontent.com%2Fun-ts%2Fnative-postinstall%2Fmain%2Fpackage.json)](https://github.com/plantain-00/type-coverage)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/un-ts/native-postinstall)](https://coderabbit.ai)
+[![npm](https://img.shields.io/npm/v/native-postinstall.svg)](https://www.npmjs.com/package/native-postinstall)
+[![GitHub Release](https://img.shields.io/github/release/un-ts/native-postinstall)](https://github.com/un-ts/native-postinstall/releases)
 
 [![Conventional Commits](https://img.shields.io/badge/conventional%20commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![Renovate enabled](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://renovatebot.com)
@@ -13,7 +13,7 @@
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![changesets](https://img.shields.io/badge/maintained%20with-changesets-176de3.svg)](https://github.com/changesets/changesets)
 
-A simple library boilerplate.
+The `postinstall` script helper for handling native bindings in legacy `npm` versions, see also <https://github.com/npm/cli/issues/4828>
 
 ## TOC <!-- omit in toc -->
 
@@ -32,22 +32,22 @@ A simple library boilerplate.
 
 ```sh
 # pnpm
-pnpm add lib-boilerplate
+pnpm add native-postinstall
 
 # yarn
-yarn add lib-boilerplate
+yarn add native-postinstall
 
 # npm
-npm i lib-boilerplate
+npm i native-postinstall
 
 # bun
-bun add lib-boilerplate
+bun add native-postinstall
 ```
 
 ### API
 
 ```js
-import echo from 'lib-boilerplate'
+import echo from 'native-postinstall'
 
 echo()
 ```

@@ -29,18 +29,17 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: lts/*
-          cache: yarn
 
       - name: Install Dependencies
-        run: yarn --immutable
+        run: npm i
 
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
-          commit: 'chore: release lib-boilerplate'
-          title: 'chore: release lib-boilerplate'
-          version: yarn run version
-          publish: yarn release
+          commit: 'chore: release native-postinstall'
+          title: 'chore: release native-postinstall'
+          version: npm run version
+          publish: npm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

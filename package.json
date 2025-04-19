@@ -1,13 +1,13 @@
 {
-  "name": "lib-boilerplate",
+  "name": "native-postinstall",
   "version": "0.0.0",
   "type": "module",
-  "description": "A simple library boilerplate.",
-  "repository": "git+https://github.com/un-ts/lib-boilerplate.git",
+  "description": "The `postinstall` script helper for handling native bindings in legacy `npm` versions",
+  "repository": "git+https://github.com/un-ts/native-postinstall.git",
   "author": "JounQin <admin@1stg.me> (https://www.1stG.me)",
   "funding": "https://opencollective.com/unts",
   "license": "MIT",
-  "packageManager": "yarn@4.9.1",
+  "packageManager": "npm@11.3.0",
   "engines": {
     "node": "^12.20.0 || ^14.18.0 || >=16.0.0"
   },
@@ -18,24 +18,25 @@
     "!**/*.tsbuildinfo"
   ],
   "scripts": {
-    "build": "run-p 'build:*'",
+    "build": "concurrently -r 'npm:build:*'",
     "build:r": "r -f cjs",
     "build:tsc": "tsc -b src",
     "clean": "rimraf -g .type-coverage coverage dist lib '.*cache'",
+    "codesandbox:install": "npm i",
     "dev": "vitest",
     "docs": "vite",
     "docs:build": "vite build",
     "format": "prettier --write .",
-    "lint": "run-p 'lint:*'",
+    "lint": "concurrently -r 'npm:lint:*'",
     "lint:es": "eslint . --cache --max-warnings 10",
     "lint:style": "stylelint . --cache",
     "lint:tsc": "tsc -b --noEmit",
-    "prepare": "simple-git-hooks && yarn-berry-deduplicate || exit 0",
-    "release": "yarn build && clean-pkg-json && changeset publish",
+    "prepare": "simple-git-hooks || exit 0",
+    "release": "npm run build && clean-pkg-json && changeset publish",
     "serve": "vite preview",
     "test": "vitest run",
     "typecov": "type-coverage",
-    "version": "changeset version && yarn --no-immutable"
+    "version": "changeset version && npm i"
   },
   "devDependencies": {
     "@1stg/browserslist-config": "^2.1.4",
@@ -60,11 +61,11 @@
     "@vitest/coverage-v8": "^3.1.1",
     "@vitest/eslint-plugin": "^1.1.43",
     "clean-pkg-json": "^1.2.1",
+    "concurrently": "^9.1.2",
     "eslint": "^9.24.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "github-markdown-css": "^5.8.1",
     "nano-staged": "^0.8.0",
-    "npm-run-all2": "^7.0.2",
     "prettier": "^3.5.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -78,8 +79,7 @@
     "type-coverage": "^2.29.7",
     "typescript": "^5.8.3",
     "vite": "^6.3.2",
-    "vitest": "^3.1.1",
-    "yarn-berry-deduplicate": "^6.1.3"
+    "vitest": "^3.1.1"
   },
   "resolutions": {
     "prettier": "^3.5.3"

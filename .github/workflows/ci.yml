@@ -31,13 +31,15 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
-          cache: yarn
 
       - name: Install Dependencies
-        run: yarn --immutable
+        run: npm i
 
       - name: Build, Lint and Test
-        run: yarn run-s build lint test
+        run: |
+          npm run build
+          npm run lint
+          npm run test
         env:
           PARSER_NO_WATCH: true
 

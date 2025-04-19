@@ -19,14 +19,13 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: lts/*
-          cache: yarn
 
       - name: Install Dependencies
-        run: yarn --immutable
+        run: npm i
 
       - name: Check Size Limit
         uses: andresz1/size-limit-action@e7493a72a44b113341c0cf6186ab49c17c4b65c1 # v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           skip_step: install
-          script: yarn size-limit --json
+          script: npx size-limit --json
