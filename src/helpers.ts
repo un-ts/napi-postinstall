@@ -43,11 +43,11 @@ export function downloadedNodePath(name: string, subpath: string) {
 export function getNapiInfoFromPackageJson(
   packageJson: PackageJson,
   checkVersion: true,
-): NapiInfo
+): NapiInfo & { version: string }
 export function getNapiInfoFromPackageJson(
   packageJson: PackageJson,
   checkVersion?: boolean,
-): NapiInfo & { version?: string }
+): NapiInfo
 export function getNapiInfoFromPackageJson(
   packageJson: PackageJson,
   checkVersion?: boolean,
@@ -57,25 +57,29 @@ export function getNapiInfoFromPackageJson(
   // eslint-disable-next-line sonarjs/deprecation
   const targets = napi_?.targets ?? napi_?.triples?.additional
 
-  if (!targets?.length || !optionalDependencies) {
+  if (!targets?.length) {
     throw new Error(
-      `No \`napi.targets\` nor \`optionalDependencies\` field found in \`${name}\`'s \`package.json\`. Please ensure the package is built with NAPI support.`,
+      `No \`napi.targets\` nor \`napi.triples.additional\` field found in \`${name}\`'s \`package.json\`. Please ensure the package is built with NAPI support.`,
     )
   }
 
   const napi = napi_!
 
+  // eslint-disable-next-line sonarjs/deprecation
+  napi.binaryName ??= napi.name
+  // eslint-disable-next-line sonarjs/deprecation
+  napi.packageName ??= napi.package?.name ?? name
+
   napi.targets = targets
+
+  if (!optionalDependencies) {
+    return { napi }
+  }
 
   let version: string | undefined
 
   for (const target of targets) {
     const { platformArchABI } = parseTriple(target)
-
-    // eslint-disable-next-line sonarjs/deprecation
-    napi.binaryName ??= napi.name
-    // eslint-disable-next-line sonarjs/deprecation
-    napi.packageName ??= napi.package?.name ?? name
 
     const pkg = `${napi.packageName}-${platformArchABI}`
 
