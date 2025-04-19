@@ -45,3 +45,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SKIP_SIMPLE_GIT_HOOKS: 1
