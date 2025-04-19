@@ -3,7 +3,6 @@
 .vercel
 coverage
 dist
-lib
+!lib
+lib/*.tsbuildinfo
 node_modules
-# temporarily disabled
-package-lock.json
