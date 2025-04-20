@@ -69,7 +69,7 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
   throw new Error(`Could not find ${JSON.stringify(subpath)} in archive`)
 }
 
-function isNpm() {
+export function isNpm() {
   const { npm_config_user_agent } = process.env
   if (npm_config_user_agent) {
     return /\bnpm\//.test(npm_config_user_agent)

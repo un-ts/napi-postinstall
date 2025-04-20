@@ -90,9 +90,11 @@ export declare function checkAndPreparePackage(
 #### Example
 
 ```js
-import { checkAndPreparePackage } from 'napi-postinstall'
+import { checkAndPreparePackage, isNpm } from 'napi-postinstall'
 
-checkAndPreparePackage('unrs-resolver' /* <napi-package-name> */)
+if (isNpm()) {
+  checkAndPreparePackage('unrs-resolver' /* <napi-package-name> */)
+}
 ```
 
 ## Sponsors and Backers
