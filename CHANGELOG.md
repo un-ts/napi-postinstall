@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.4
+
+### Patch Changes
+
+- [`87ecdd2`](https://github.com/un-ts/napi-postinstall/commit/87ecdd2be320e0095efca493032d51e1c7b0136c) Thanks [@JounQin](https://github.com/JounQin)! - fix: only check for npm
+
 ## 0.1.3
 
 ### Patch Changes
