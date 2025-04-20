@@ -70,11 +70,7 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
 }
 
 export function isNpm() {
-  const { npm_config_user_agent } = process.env
-  if (npm_config_user_agent) {
-    return /\bnpm\//.test(npm_config_user_agent)
-  }
-  return false
+  return !!process.env.npm_config_user_agent?.startsWith('npm/')
 }
 
 function installUsingNPM(
