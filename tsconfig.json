@@ -1,9 +1,12 @@
 {
   "extends": "@1stg/tsconfig/node",
   "compilerOptions": {
+    "allowSyntheticDefaultImports": false,
+    "esModuleInterop": false,
     "rootDir": ".",
     "paths": {
       "napi-postinstall": ["./src/index.ts"]
-    }
+    },
+    "target": "ES2021"
   }
 }

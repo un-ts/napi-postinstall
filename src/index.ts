@@ -1,10 +1,10 @@
 // based on https://github.com/evanw/esbuild/blob/4475787eef4c4923b92b9fa37ebba1c88b9e1d9b/lib/npm/node-install.ts
 
 import { execSync } from 'node:child_process'
-import fs from 'node:fs'
-import https from 'node:https'
-import path from 'node:path'
-import zlib from 'node:zlib'
+import * as fs from 'node:fs'
+import * as https from 'node:https'
+import * as path from 'node:path'
+import * as zlib from 'node:zlib'
 
 import { LOG_PREFIX } from './constants.js'
 import {
