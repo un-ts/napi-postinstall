@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process'
-import fs, { Stats } from 'node:fs'
-import path from 'node:path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 import { DEFAULT_NPM_REGISTRY } from './constants.js'
 import { parseTriple } from './target.js'
@@ -20,7 +20,7 @@ export function getGlobalNpmRegistry() {
 export function removeRecursive(dir: string) {
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
-    let stats: Stats
+    let stats: fs.Stats
     try {
       stats = fs.lstatSync(entryPath)
     } catch {

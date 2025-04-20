@@ -46,9 +46,6 @@
     "vercel-build": "npm i -D @esbuild/linux-x64 @rollup/rollup-linux-x64-gnu @swc/core-linux-x64-gnu && npm run docs:build",
     "version": "changeset version && npm i"
   },
-  "dependencies": {
-    "tslib": "^2.8.1"
-  },
   "devDependencies": {
     "@1stg/browserslist-config": "^2.1.4",
     "@1stg/common-config": "^13.0.1",
