@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.3
+
+### Patch Changes
+
+- [#12](https://github.com/un-ts/napi-postinstall/pull/12) [`5b8ff18`](https://github.com/un-ts/napi-postinstall/commit/5b8ff180f09480a8a64726b6fc7547f34fa305b0) Thanks [@JounQin](https://github.com/JounQin)! - chore: remove unnecessary `tslib` by targeting ES2021
+
 ## 0.1.2
 
 ### Patch Changes
