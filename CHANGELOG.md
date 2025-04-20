@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.5
+
+### Patch Changes
+
+- [`c88dc0c`](https://github.com/un-ts/napi-postinstall/commit/c88dc0cf96c82ca81b659eecc8a596ab28b8f686) Thanks [@JounQin](https://github.com/JounQin)! - fix: isNpm detection
+
 ## 0.1.4
 
 ### Patch Changes
