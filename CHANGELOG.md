@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.2
+
+### Patch Changes
+
+- [#8](https://github.com/un-ts/napi-postinstall/pull/8) [`68a8acc`](https://github.com/un-ts/napi-postinstall/commit/68a8accf944c72867a9543e6f198b962b5414109) Thanks [@JounQin](https://github.com/JounQin)! - fix: `tslib` should be listed as dependency
+
 ## 0.1.1
 
 ### Patch Changes
