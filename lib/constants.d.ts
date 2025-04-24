@@ -5,3 +5,4 @@ export declare const WASM32 = "wasm32";
 export declare const WASI = "wasi";
 export declare const WASM32_WASI = "wasm32-wasi";
 export declare const EABI = "eabi";
+export declare const PACKAGE_JSON = "package.json";

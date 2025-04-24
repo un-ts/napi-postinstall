@@ -15,3 +15,5 @@ export const WASI = 'wasi'
 export const WASM32_WASI = `${WASM32}-${WASI}`
 
 export const EABI = 'eabi'
+
+export const PACKAGE_JSON = 'package.json'

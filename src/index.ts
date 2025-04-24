@@ -6,7 +6,7 @@ import * as https from 'node:https'
 import * as path from 'node:path'
 import * as zlib from 'node:zlib'
 
-import { LOG_PREFIX, WASM32, WASM32_WASI } from './constants.js'
+import { LOG_PREFIX, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
 import {
   downloadedNodePath,
   getErrorMessage,
@@ -87,11 +87,11 @@ function installUsingNPM(
 
   // Create a temporary directory inside the "<napi>" package with an empty
   // "package.json" file. We'll use this to run "npm install" in.
-  const pkgDir = path.dirname(require.resolve(hostPkg + '/package.json'))
+  const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
   const installDir = path.join(pkgDir, 'npm-install')
   fs.mkdirSync(installDir, { recursive: true })
   try {
-    fs.writeFileSync(path.join(installDir, 'package.json'), '{}')
+    fs.writeFileSync(path.join(installDir, PACKAGE_JSON), '{}')
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"
@@ -182,7 +182,7 @@ export async function checkAndPreparePackage(
 ) {
   const packageJson =
     typeof packageNameOrPackageJson === 'string'
-      ? (require(packageNameOrPackageJson + '/package.json') as PackageJson)
+      ? (require(packageNameOrPackageJson + `/${PACKAGE_JSON}`) as PackageJson)
       : packageNameOrPackageJson
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
@@ -220,7 +220,7 @@ export async function checkAndPreparePackage(
         console.error(`${LOG_PREFIX}Failed to find package "${pkg}" on the file system
 
 This can happen if you use the "--no-optional" flag. The "optionalDependencies"
-package.json feature is used by ${name} to install the correct napi binary
+${PACKAGE_JSON} feature is used by ${name} to install the correct napi binary
 for your current platform. This install script will now attempt to work around
 this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
 `)
