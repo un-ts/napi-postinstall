@@ -1,8 +1,7 @@
 // based on https://github.com/napi-rs/napi-rs/blob/2eb2ab619f9fb924453e21d2198fe67ea21b9680/cli/src/utils/target.ts
 
-export type Platform = NodeJS.Platform | 'wasi' | 'wasm'
-
-export type NodeJSArch = NodeJS.Architecture | 'universal' | 'wasm32' | 'x32'
+import { EABI, WASI, WASM32, WASM32_WASI } from './constants.js'
+import { NodeJSArch, Platform, Target } from './types.js'
 
 const CpuToNodeArch: Record<string, NodeJSArch> = {
   x86_64: 'x64',
@@ -18,14 +17,6 @@ const SysToNodePlatform: Record<string, Platform> = {
   freebsd: 'freebsd',
   darwin: 'darwin',
   windows: 'win32',
-}
-
-export interface Target {
-  triple: string
-  platformArchABI: string
-  platform: Platform
-  arch: NodeJSArch
-  abi: string | null
 }
 
 /**
@@ -46,20 +37,20 @@ export interface Target {
  */
 export function parseTriple(rawTriple: string): Target {
   if (
-    rawTriple === 'wasm32-wasi' ||
-    rawTriple === 'wasm32-wasi-preview1-threads' ||
-    rawTriple.startsWith('wasm32-wasip')
+    rawTriple === WASM32_WASI ||
+    rawTriple === `${WASM32_WASI}-preview1-threads` ||
+    rawTriple.startsWith(`${WASM32}-${WASI}p`)
   ) {
     return {
       triple: rawTriple,
-      platformArchABI: 'wasm32-wasi',
-      platform: 'wasi',
-      arch: 'wasm32',
-      abi: 'wasi',
+      platformArchABI: WASM32_WASI,
+      platform: WASI,
+      arch: WASM32,
+      abi: WASI,
     }
   }
-  const triple = rawTriple.endsWith('eabi')
-    ? `${rawTriple.slice(0, -4)}-eabi`
+  const triple = rawTriple.endsWith(EABI)
+    ? `${rawTriple.slice(0, -4)}-${EABI}`
     : rawTriple
   const triples = triple.split('-')
   let cpu: string

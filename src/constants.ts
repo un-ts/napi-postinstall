@@ -9,3 +9,9 @@ export const { name, version } = require(
 ) as PackageJson
 
 export const LOG_PREFIX = `[${name}@${version}] `
+
+export const WASM32 = 'wasm32'
+export const WASI = 'wasi'
+export const WASM32_WASI = `${WASM32}-${WASI}`
+
+export const EABI = 'eabi'
