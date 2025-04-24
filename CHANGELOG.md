@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.1.6
+
+### Patch Changes
+
+- [#18](https://github.com/un-ts/napi-postinstall/pull/18) [`8a887ee`](https://github.com/un-ts/napi-postinstall/commit/8a887eec5879cf495cc1e95cf80f26a422114b28) Thanks [@JounQin](https://github.com/JounQin)! - fix: support install `wasm32-wasi` correctly with `--cpu=wasm32`
+
 ## 0.1.5
 
 ### Patch Changes
