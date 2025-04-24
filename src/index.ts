@@ -6,7 +6,7 @@ import * as https from 'node:https'
 import * as path from 'node:path'
 import * as zlib from 'node:zlib'
 
-import { LOG_PREFIX } from './constants.js'
+import { LOG_PREFIX, WASM32, WASM32_WASI } from './constants.js'
 import {
   downloadedNodePath,
   getErrorMessage,
@@ -17,7 +17,6 @@ import {
 } from './helpers.js'
 import type { PackageJson } from './types.js'
 
-export type * from './target.js'
 export type * from './types.js'
 
 function fetch(url: string) {
@@ -77,6 +76,7 @@ function installUsingNPM(
   hostPkg: string,
   pkg: string,
   version: string,
+  target: string,
   subpath: string,
   nodePath: string,
 ) {
@@ -100,7 +100,9 @@ function installUsingNPM(
     // for example, a custom configured npm registry and special firewall rules.
     // eslint-disable-next-line sonarjs/os-command
     execSync(
-      `npm install --loglevel=error --prefer-offline --no-audit --progress=false ${pkg}@${version}`,
+      `npm install --loglevel=error --prefer-offline --no-audit --progress=false${
+        target === WASM32_WASI ? ` --cpu=${WASM32}` : ''
+      } ${pkg}@${version}`,
       { cwd: installDir, stdio: 'pipe', env },
     )
 
@@ -183,16 +185,16 @@ export async function checkAndPreparePackage(
       ? (require(packageNameOrPackageJson + '/package.json') as PackageJson)
       : packageNameOrPackageJson
 
-  const { name, version, optionalDependencies } = packageJson
+  const { name, version: pkgVersion, optionalDependencies } = packageJson
 
-  const { napi, version: napiVersion = version } = getNapiInfoFromPackageJson(
+  const { napi, version = pkgVersion } = getNapiInfoFromPackageJson(
     packageJson,
     checkVersion,
   )
 
-  if (checkVersion && version !== napiVersion) {
+  if (checkVersion && pkgVersion !== version) {
     throw new Error(
-      `Inconsistent package versions found for \`${name}\` v${version} vs \`${napi.packageName}\` v${napiVersion}.`,
+      `Inconsistent package versions found for \`${name}\` v${pkgVersion} vs \`${napi.packageName}\` v${version}.`,
     )
   }
 
@@ -238,7 +240,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         console.error(
           `${LOG_PREFIX}Trying to install package "${pkg}" using npm`,
         )
-        installUsingNPM(name, pkg, napiVersion, subpath, nodePath)
+        installUsingNPM(name, pkg, version, target, subpath, nodePath)
         break
       } catch (err) {
         console.error(
@@ -249,7 +251,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(pkg, napiVersion, subpath, nodePath)
+          await downloadDirectlyFromNPM(pkg, version, subpath, nodePath)
           break
         } catch (err) {
           throw new Error(
