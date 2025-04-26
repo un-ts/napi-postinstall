@@ -40,23 +40,23 @@ describe('pnpm fixture', () => {
 })
 
 describe('yarn fixture', () => {
-  it('should just work', () =>
-    expect(
-      exec('yarn', [], {
-        nodeOptions: {
-          cwd: path.resolve(fixtures, 'yarn'),
-        },
-      }),
-    ).resolves.not.toThrow())
+  it('should just work', async () => {
+    const res = await exec('yarn', [], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'yarn'),
+      },
+    })
+    expect(res.stderr).toEqual('')
+  })
 })
 
 describe('yarn pnp fixture', () => {
-  it('should just work', () =>
-    expect(
-      exec('yarn', [], {
-        nodeOptions: {
-          cwd: path.resolve(fixtures, 'yarn-pnp'),
-        },
-      }),
-    ).resolves.not.toThrow())
+  it('should just work', async () => {
+    const res = await exec('yarn', [], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'yarn-pnp'),
+      },
+    })
+    expect(res.stderr).toEqual('')
+  })
 })
