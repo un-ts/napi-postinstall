@@ -72,6 +72,7 @@ export function isNpm() {
   return !!process.env.npm_config_user_agent?.startsWith('npm/')
 }
 
+// eslint-disable-next-line sonarjs/cognitive-complexity
 function installUsingNPM(
   hostPkg: string,
   pkg: string,
@@ -80,6 +81,10 @@ function installUsingNPM(
   subpath: string,
   nodePath: string,
 ) {
+  // WASM32_WASI is a special case because it requires the whole "node_modules"
+  // of its dependencies to be present.
+  const isWasm32Wasi = target === WASM32_WASI
+
   // Erase "npm_config_global" so that "npm install --global <napi>" works.
   // Otherwise this nested "npm install" will also be global, and the install
   // will deadlock waiting for the global installation lock.
@@ -91,7 +96,9 @@ function installUsingNPM(
   const installDir = path.join(pkgDir, 'npm-install')
   fs.mkdirSync(installDir, { recursive: true })
   try {
-    fs.writeFileSync(path.join(installDir, PACKAGE_JSON), '{}')
+    const packageJsonPath = path.join(installDir, PACKAGE_JSON)
+
+    fs.writeFileSync(packageJsonPath, '{}')
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"
@@ -101,30 +108,73 @@ function installUsingNPM(
     // eslint-disable-next-line sonarjs/os-command
     execSync(
       `npm install --loglevel=error --prefer-offline --no-audit --progress=false${
-        target === WASM32_WASI ? ` --cpu=${WASM32}` : ''
+        isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
       { cwd: installDir, stdio: 'pipe', env },
     )
 
+    // Remove the unused "package.json" file
+    if (isWasm32Wasi) {
+      fs.unlinkSync(packageJsonPath)
+    }
+
     try {
-      /**
-       * Try to move up the <napi> package directory to the parent
-       * "node_modules". This is a bit of a hack but it works around the problem
-       * that legacy npm versions does not respect "optionalDependencies" when
-       * "package-lock.json" presented, but it's fine to fail here.
-       *
-       * See also [npm/cli#4828](https://github.com/npm/cli/issues/4828)
-       */
-      const newPath = path.resolve(
-        pkgDir,
-        hostPkg
-          .split('/')
-          .map(() => '..')
-          .join('/'),
-        pkg,
-      )
-      fs.mkdirSync(newPath, { recursive: true })
-      fs.renameSync(path.join(installDir, 'node_modules', pkg), newPath)
+      const nodeModulesDir = path.join(installDir, 'node_modules')
+      if (isWasm32Wasi) {
+        const newNodeModulesDir = path.resolve(installDir, '../node_modules')
+        const dirs = fs.readdirSync(nodeModulesDir)
+        for (const dir of dirs) {
+          // scoped packages need to be moved recursively in case there are same
+          // scoped packages already installed by the <napi> package
+          if (dir.startsWith('@')) {
+            const newPath = path.join(newNodeModulesDir, dir)
+            fs.mkdirSync(newPath, { recursive: true })
+            const subdir = path.join(nodeModulesDir, dir)
+            const nestedDirs = fs.readdirSync(subdir)
+            for (const nestedDir of nestedDirs) {
+              try {
+                fs.renameSync(
+                  path.join(subdir, nestedDir),
+                  path.join(newPath, nestedDir),
+                )
+              } catch {
+                // Ignore errors when renaming the directory, for example the
+                // dependency could already be present.
+              }
+            }
+          } else {
+            try {
+              fs.renameSync(
+                path.join(nodeModulesDir, dir),
+                path.join(newNodeModulesDir, dir),
+              )
+            } catch {
+              // Ignore errors when renaming the directory, for example the
+              // dependency could already be present.
+            }
+          }
+        }
+      } else {
+        /**
+         * Try to move up the <napi> package directory to the parent
+         * "node_modules". This is a bit of a hack but it works around the
+         * problem that legacy npm versions does not respect
+         * "optionalDependencies" when "package-lock.json" presented, but it's
+         * fine to fail here.
+         *
+         * See also [npm/cli#4828](https://github.com/npm/cli/issues/4828)
+         */
+        const newPath = path.resolve(
+          pkgDir,
+          hostPkg
+            .split('/')
+            .map(() => '..')
+            .join('/'),
+          pkg,
+        )
+        fs.mkdirSync(newPath, { recursive: true })
+        fs.renameSync(path.join(nodeModulesDir, pkg), newPath)
+      }
     } catch {
       // Move the downloaded binary executable into place. The destination path
       // is the same one that the JavaScript API code uses so it will be able to
@@ -245,7 +295,7 @@ export async function checkAndPreparePackage(
     }
 
     const binaryPrefix = napi.binaryName ? `${napi.binaryName}.` : ''
-    const subpath = `${binaryPrefix}${target}.node`
+    const subpath = `${binaryPrefix}${target}.${target === WASM32_WASI ? 'wasm' : 'node'}`
 
     try {
       // First check for the binary package from our "optionalDependencies". This
