@@ -22,13 +22,13 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: lts/*
-          cache: npm
+          cache: yarn
 
       - name: Install dependencies
-        run: npm ci
+        run: yarn --immutable
 
       - name: Format Codes
-        run: npm run format
+        run: yarn format
 
       - name: Apply autofix.ci
         uses: autofix-ci/action@2891949f3779a1cafafae1523058501de3d4e944 # v1

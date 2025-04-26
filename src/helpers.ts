@@ -80,15 +80,15 @@ export function getNapiInfoFromPackageJson(
 
   for (const target of targets) {
     const { platformArchABI } = parseTriple(target)
-
     const pkg = `${napi.packageName}-${platformArchABI}`
-
     const packageVersion = optionalDependencies[pkg]
-    if (checkVersion && !packageVersion) {
-      throw new Error(`No version found for \`${name}\` with \`${pkg}\`.`)
+
+    if (!packageVersion) {
+      continue
     }
+
     if (version) {
-      if (version !== packageVersion) {
+      if (checkVersion && version !== packageVersion) {
         throw new Error(
           `Inconsistent package versions found for \`${name}\` with \`${pkg}\` v${packageVersion} vs v${version}.`,
         )

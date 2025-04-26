@@ -3,18 +3,16 @@ import { checkAndPreparePackage } from 'napi-postinstall'
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
     await expect(
-      checkAndPreparePackage('rollup', true),
-    ).rejects.toMatchInlineSnapshot(
-      `[Error: No version found for \`rollup\` with \`@rollup/rollup-linux-ppc64-gnu\`.]`,
-    )
+      checkAndPreparePackage('rollup', undefined, true),
+    ).resolves.not.toThrow()
     await expect(checkAndPreparePackage('rollup')).resolves.not.toThrow()
 
     await expect(
-      checkAndPreparePackage('@swc/core', true),
+      checkAndPreparePackage('@swc/core', undefined, true),
     ).resolves.not.toThrow()
 
     await expect(
-      checkAndPreparePackage('unrs-resolver', true),
+      checkAndPreparePackage('unrs-resolver', undefined, true),
     ).resolves.not.toThrow()
 
     await expect(

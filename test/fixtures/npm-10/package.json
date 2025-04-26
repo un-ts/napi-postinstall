@@ -1,0 +1,12 @@
+{
+  "name": "napi-postinstall-npm-10",
+  "private": true,
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "postinstall": "napi-postinstall rollup 4.40.0 check"
+  },
+  "devDependencies": {
+    "napi-postinstall": "../../..",
+    "rollup": "^4.40.0"
+  }
+}
