@@ -255,6 +255,9 @@ export function getNapiNativeTarget(): string[] | string {
 const WASI_TARGET = 'wasm32-wasi'
 
 export function getNapiNativeTargets() {
+  if (process.versions.webcontainer) {
+    return [WASI_TARGET]
+  }
   const targets = getNapiNativeTarget()
   if (Array.isArray(targets)) {
     return [...targets, WASI_TARGET]
