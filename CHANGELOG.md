@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.2.0
+
+### Minor Changes
+
+- [#21](https://github.com/un-ts/napi-postinstall/pull/21) [`2d6c726`](https://github.com/un-ts/napi-postinstall/commit/2d6c726310885bb674ce5c93fb0c8b18a2261575) Thanks [@JounQin](https://github.com/JounQin)! - feat: support reading `package.json` from npm registry
+
+- [#21](https://github.com/un-ts/napi-postinstall/pull/21) [`2d6c726`](https://github.com/un-ts/napi-postinstall/commit/2d6c726310885bb674ce5c93fb0c8b18a2261575) Thanks [@JounQin](https://github.com/JounQin)! - feat: support `yarn`/`pnpm` seamlessly for `webcontainer`
+
 ## 0.1.6
 
 ### Patch Changes
