@@ -1,8 +1,10 @@
 .*cache
 .type-coverage
 .vercel
+.yarn/*
+!.yarn/plugins
+!.yarn/releases
 coverage
 dist
-!lib
-lib/*.tsbuildinfo
+lib
 node_modules

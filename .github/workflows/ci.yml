@@ -31,29 +31,30 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
-          cache: npm
+          cache: yarn
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          corepack enable npm
+          corepack enable
+          yarn --immutable
 
       - name: Build
         run: |
-          npm run build
-          npx napi-postinstall rollup
-          npx napi-postinstall unrs-resolver check
-
-      - name: Bad Windows
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: npm i -D @rollup/rollup-win32-x64-msvc
+          yarn build
+          yarn napi-postinstall rollup
+          yarn napi-postinstall unrs-resolver check
 
       - name: Lint and Test
         run: |
-          npm run lint
-          npm run test
+          yarn lint
+          yarn test
         env:
           PARSER_NO_WATCH: true
 
       - name: Codecov
+        # bad Windows -- https://github.com/codecov/codecov-action/issues/1787
+        if: ${{ !github.event.pull_request.head.repo.fork && matrix.os != 'windows-latest' }}
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

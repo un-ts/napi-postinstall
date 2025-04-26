@@ -29,18 +29,18 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: lts/*
-          cache: npm
+          cache: yarn
 
       - name: Install Dependencies
-        run: npm ci
+        run: yarn --immutable
 
       - name: Create Release Pull Request or Publish to npm
         uses: changesets/action@v1
         with:
           commit: 'chore: release napi-postinstall'
           title: 'chore: release napi-postinstall'
-          version: npm run version
-          publish: npm run release
+          publish: yarn release
+          version: yarn run version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true

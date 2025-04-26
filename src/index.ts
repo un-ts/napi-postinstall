@@ -175,15 +175,52 @@ async function downloadDirectlyFromNPM(
   }
 }
 
+export async function checkAndPreparePackage(
+  packageName: string,
+  version?: string,
+  checkVersion?: boolean,
+): Promise<void>
+export async function checkAndPreparePackage(
+  packageJson: PackageJson,
+  checkVersion?: boolean,
+): Promise<void>
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function checkAndPreparePackage(
   packageNameOrPackageJson: PackageJson | string,
+  versionOrCheckVersion?: boolean | string,
   checkVersion?: boolean,
 ) {
-  const packageJson =
-    typeof packageNameOrPackageJson === 'string'
-      ? (require(packageNameOrPackageJson + `/${PACKAGE_JSON}`) as PackageJson)
-      : packageNameOrPackageJson
+  let packageJson: PackageJson
+
+  if (typeof packageNameOrPackageJson === 'string') {
+    try {
+      packageJson = require(
+        packageNameOrPackageJson + `/${PACKAGE_JSON}`,
+      ) as PackageJson
+    } catch {
+      // could fail with `pnpm`, `yarn` v2+, etc, fallback to load from npm registry instead
+      if (typeof versionOrCheckVersion !== 'string') {
+        throw new TypeError(
+          `Failed to load \`${PACKAGE_JSON}\` from "${packageNameOrPackageJson}", please provide a version.`,
+        )
+      }
+      const pkg = packageNameOrPackageJson
+      const packageJsonBuffer = await fetch(
+        `${getGlobalNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
+      )
+      packageJson = JSON.parse(
+        packageJsonBuffer.toString('utf8'),
+      ) as PackageJson
+    }
+  } else {
+    packageJson = packageNameOrPackageJson
+    if (
+      checkVersion === undefined &&
+      typeof versionOrCheckVersion === 'boolean'
+    ) {
+      checkVersion = versionOrCheckVersion
+    }
+  }
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
 

@@ -1,0 +1,12 @@
+{
+  "name": "napi-postinstall-yarn-pnp",
+  "private": true,
+  "packageManager": "yarn@4.9.1",
+  "scripts": {
+    "prepare": "node ./postinstall.js"
+  },
+  "devDependencies": {
+    "napi-postinstall": "link:../../..",
+    "rollup": "^4.40.0"
+  }
+}
