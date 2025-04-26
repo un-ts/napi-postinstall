@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.1
+
+### Patch Changes
+
+- [#23](https://github.com/un-ts/napi-postinstall/pull/23) [`f14cd3f`](https://github.com/un-ts/napi-postinstall/commit/f14cd3fe0d10445eb41c3c1df28d9f3378b38639) Thanks [@JounQin](https://github.com/JounQin)! - fix: always use `wasm32-wasi` target for `webcontainer`
+
 ## 0.2.0
 
 ### Minor Changes
