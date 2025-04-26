@@ -42,7 +42,7 @@
     "test": "vitest run",
     "typecov": "type-coverage",
     "vercel-build": "yarn docs:build",
-    "version": "changeset version && yarn --no-immutable"
+    "version": "changeset version && yarn --no-immutable && yarn test"
   },
   "devDependencies": {
     "@1stg/browserslist-config": "^2.1.4",
