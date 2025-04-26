@@ -6,7 +6,7 @@
     "prepare": "node ./postinstall.js"
   },
   "devDependencies": {
-    "napi-postinstall": "link:../../..",
+    "napi-postinstall": "portal:../../..",
     "rollup": "^4.40.0"
   }
 }

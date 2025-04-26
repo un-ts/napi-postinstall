@@ -679,14 +679,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "napi-postinstall-yarn-pnp@workspace:."
   dependencies:
-    napi-postinstall: "link:../../.."
+    napi-postinstall: "portal:../../.."
     rollup: "npm:^4.40.0"
   languageName: unknown
   linkType: soft
 
-"napi-postinstall@link:../../..::locator=napi-postinstall-yarn-pnp%40workspace%3A.":
+"napi-postinstall@portal:../../..::locator=napi-postinstall-yarn-pnp%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "napi-postinstall@link:../../..::locator=napi-postinstall-yarn-pnp%40workspace%3A."
+  resolution: "napi-postinstall@portal:../../..::locator=napi-postinstall-yarn-pnp%40workspace%3A."
+  bin:
+    napi-postinstall: ./lib/cli.js
   languageName: node
   linkType: soft
 
