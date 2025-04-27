@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.2
+
+### Patch Changes
+
+- [#25](https://github.com/un-ts/napi-postinstall/pull/25) [`2eb7867`](https://github.com/un-ts/napi-postinstall/commit/2eb78677ff0de44c01617f2f078a493251b73172) Thanks [@mrginglymus](https://github.com/mrginglymus)! - fix: give up patching `yarn` pnp automatically which is impossible
+
 ## 0.2.1
 
 ### Patch Changes
