@@ -1,0 +1,13 @@
+diff --git a/package.json b/package.json
+index a6d83fe865fc01552188ef678dec1eaf4a33aff3..69d87cdcbe0a8c489213c321b1543947fc40211f 100644
+--- a/package.json
++++ b/package.json
+@@ -263,6 +263,7 @@
+       "require": "./dist/parseAst.js",
+       "import": "./dist/es/parseAst.js"
+     },
+-    "./dist/*": "./dist/*"
++    "./dist/*": "./dist/*",
++    "./package.json": "./package.json"
+   }
+ }

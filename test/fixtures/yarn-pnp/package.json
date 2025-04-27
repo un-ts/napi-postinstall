@@ -7,6 +7,6 @@
   },
   "devDependencies": {
     "napi-postinstall": "portal:../../..",
-    "rollup": "^4.40.0"
+    "rollup": "patch:rollup@npm%3A4.40.0#~/.yarn/patches/rollup-npm-4.40.0-5ee51badc3.patch"
   }
 }

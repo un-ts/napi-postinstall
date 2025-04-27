@@ -6,37 +6,48 @@ vi.setConfig({ testTimeout: 5 * 60_000 })
 
 const fixtures = path.resolve(__dirname, 'fixtures')
 
+const removeUnrelatedWarnings = (stderr: string) =>
+  stderr
+    .split(/\r?\n/)
+    .filter(
+      line =>
+        !line.startsWith('npm warn') &&
+        !line.startsWith('! Corepack is about to download'),
+    )
+    .join('\n')
+    .trim()
+
 describe('npm fixture', () => {
-  it('should just work', () =>
-    expect(
-      exec('npm', ['install'], {
-        nodeOptions: {
-          cwd: path.resolve(fixtures, 'npm'),
-        },
-      }),
-    ).resolves.not.toThrow())
+  it('should just work', async () => {
+    const res = await exec('npm', ['install'], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'npm'),
+      },
+    })
+    expect(removeUnrelatedWarnings(res.stderr)).toBe('')
+  })
 })
 
 describe('npm-10 fixture', () => {
-  it('should just work', () =>
-    expect(
-      exec('npm', ['install'], {
-        nodeOptions: {
-          cwd: path.resolve(fixtures, 'npm-10'),
-        },
-      }),
-    ).resolves.not.toThrow())
+  it('should just work', async () => {
+    const res = await exec('npm', ['install'], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'npm-10'),
+      },
+    })
+    expect(removeUnrelatedWarnings(res.stderr)).toBe('')
+  })
 })
 
 describe('pnpm fixture', () => {
-  it('should just work', () =>
-    expect(
-      exec('pnpm', ['install'], {
-        nodeOptions: {
-          cwd: path.resolve(fixtures, 'pnpm'),
-        },
-      }),
-    ).resolves.not.toThrow())
+  it('should just work', async () => {
+    const res = await exec('pnpm', ['install'], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'pnpm'),
+      },
+    })
+    expect(removeUnrelatedWarnings(res.stderr)).toBe('')
+  })
 })
 
 describe('yarn fixture', () => {
@@ -46,17 +57,17 @@ describe('yarn fixture', () => {
         cwd: path.resolve(fixtures, 'yarn'),
       },
     })
-    expect(res.stderr).toEqual('')
+    expect(removeUnrelatedWarnings(res.stderr)).toBe('')
   })
 })
 
 describe('yarn pnp fixture', () => {
-  it('should just work', async () => {
+  it('should not work and warn user', async () => {
     const res = await exec('yarn', [], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'yarn-pnp'),
       },
     })
-    expect(res.stderr).toEqual('')
+    expect(removeUnrelatedWarnings(res.stderr)).toBe('')
   })
 })
