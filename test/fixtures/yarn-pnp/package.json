@@ -6,7 +6,7 @@
     "prepare": "node ./postinstall.js"
   },
   "devDependencies": {
-    "napi-postinstall": "link:../../..",
-    "rollup": "^4.40.0"
+    "napi-postinstall": "portal:../../..",
+    "rollup": "patch:rollup@npm%3A4.40.0#~/.yarn/patches/rollup-npm-4.40.0-5ee51badc3.patch"
   }
 }

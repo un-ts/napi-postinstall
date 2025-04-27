@@ -6,9 +6,11 @@ import * as https from 'node:https'
 import * as path from 'node:path'
 import * as zlib from 'node:zlib'
 
-import { LOG_PREFIX, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
+import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
 import {
   downloadedNodePath,
+  errorLog,
+  errorMessage,
   getErrorMessage,
   getGlobalNpmRegistry,
   getNapiInfoFromPackageJson,
@@ -46,7 +48,7 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
     buffer = zlib.unzipSync(buffer)
   } catch (err) {
     throw new Error(
-      `Invalid gzip data in archive: ${(err as Error | undefined)?.message || String(err)}`,
+      errorMessage(`Invalid gzip data in archive`, getErrorMessage(err)),
     )
   }
   const str = (i: number, n: number) =>
@@ -65,11 +67,15 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
       offset += (size + 511) & ~511
     }
   }
-  throw new Error(`Could not find ${JSON.stringify(subpath)} in archive`)
+  throw new Error(errorMessage(`Could not find \`${subpath}\` in archive`))
 }
 
 export function isNpm() {
-  return !!process.env.npm_config_user_agent?.startsWith('npm/')
+  return process.env.npm_config_user_agent?.startsWith('npm/')
+}
+
+export function isPnp() {
+  return !!process.versions.pnp
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -94,7 +100,22 @@ function installUsingNPM(
   // "package.json" file. We'll use this to run "npm install" in.
   const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
   const installDir = path.join(pkgDir, 'npm-install')
-  fs.mkdirSync(installDir, { recursive: true })
+  try {
+    fs.mkdirSync(installDir, { recursive: true })
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException
+    if (error.code === 'EROFS') {
+      // This can happen if the package is installed in a read-only location
+      // (e.g. "node_modules" inside a read-only directory). In this case, we
+      // can't install the package and should just give up.
+      errorLog(
+        `Failed to create the temporary directory on read-only location: ${error.message}`,
+      )
+      errorLog(`You have to install \`${pkg}\` manually in this case.`)
+      return
+    }
+    throw err
+  }
   try {
     const packageJsonPath = path.join(installDir, PACKAGE_JSON)
 
@@ -211,16 +232,14 @@ async function downloadDirectlyFromNPM(
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
   const url = `${getGlobalNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
-  console.error(`${LOG_PREFIX}Trying to download ${JSON.stringify(url)}`)
+  errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     fs.writeFileSync(
       nodePath,
       extractFileFromTarGzip(await fetch(url), subpath),
     )
   } catch (err) {
-    console.error(
-      `${LOG_PREFIX}Failed to download ${JSON.stringify(url)}: ${getErrorMessage(err)}`,
-    )
+    errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))
     throw err
   }
 }
@@ -251,7 +270,9 @@ export async function checkAndPreparePackage(
       // could fail with `pnpm`, `yarn` v2+, etc, fallback to load from npm registry instead
       if (typeof versionOrCheckVersion !== 'string') {
         throw new TypeError(
-          `Failed to load \`${PACKAGE_JSON}\` from "${packageNameOrPackageJson}", please provide a version.`,
+          errorMessage(
+            `Failed to load \`${PACKAGE_JSON}\` from \`${packageNameOrPackageJson}\`, please provide a version.`,
+          ),
         )
       }
       const pkg = packageNameOrPackageJson
@@ -281,7 +302,9 @@ export async function checkAndPreparePackage(
 
   if (checkVersion && pkgVersion !== version) {
     throw new Error(
-      `Inconsistent package versions found for \`${name}\` v${pkgVersion} vs \`${napi.packageName}\` v${version}.`,
+      errorMessage(
+        `Inconsistent package versions found for \`${name}\` v${pkgVersion} vs \`${napi.packageName}\` v${version}.`,
+      ),
     )
   }
 
@@ -294,8 +317,10 @@ export async function checkAndPreparePackage(
       continue
     }
 
+    const isWasm32Wasi = target === WASM32_WASI
+
     const binaryPrefix = napi.binaryName ? `${napi.binaryName}.` : ''
-    const subpath = `${binaryPrefix}${target}.${target === WASM32_WASI ? 'wasm' : 'node'}`
+    const subpath = `${binaryPrefix}${target}.${isWasm32Wasi ? 'wasm' : 'node'}`
 
     try {
       // First check for the binary package from our "optionalDependencies". This
@@ -303,8 +328,24 @@ export async function checkAndPreparePackage(
       require.resolve(`${pkg}/${subpath}`)
       break
     } catch {
+      if (isPnp()) {
+        if (isWasm32Wasi) {
+          try {
+            // eslint-disable-next-line sonarjs/os-command
+            execSync(`yarn add -D ${pkg}@${version}`)
+          } catch (err) {
+            errorLog(
+              `Failed to install package \`${pkg}\` automatically in the yarn P'n'P environment`,
+              getErrorMessage(err),
+            )
+            errorLog("You'll have to install it manually in this case.")
+          }
+        }
+        return
+      }
+
       if (!isNpm()) {
-        console.error(`${LOG_PREFIX}Failed to find package "${pkg}" on the file system
+        errorLog(`Failed to find package "${pkg}" on the file system
 
 This can happen if you use the "--no-optional" flag. The "optionalDependencies"
 ${PACKAGE_JSON} feature is used by ${name} to install the correct napi binary
@@ -322,16 +363,26 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
       // cases that fail because people have customized their environment in
       // some strange way that breaks downloading. This code path is just here
       // to be helpful but it's not the supported way of installing <napi>.
-      const nodePath = downloadedNodePath(name, subpath)
+      let nodePath: string
       try {
-        console.error(
-          `${LOG_PREFIX}Trying to install package "${pkg}" using npm`,
+        nodePath = downloadedNodePath(name, subpath)
+      } catch {
+        // could fail with `yarn` P'n'P or unknown situation, try our best to
+        // guess the path from current location
+        const nodeModulesDir = path.resolve(
+          require.resolve(meta.name + `/${PACKAGE_JSON}`),
+          '../..',
         )
+        nodePath = path.join(nodeModulesDir, name, subpath)
+      }
+      try {
+        errorLog(`Trying to install package "${pkg}" using npm`)
         installUsingNPM(name, pkg, version, target, subpath, nodePath)
         break
       } catch (err) {
-        console.error(
-          `${LOG_PREFIX}Failed to install package "${pkg}" using npm: ${getErrorMessage(err)}`,
+        errorLog(
+          `Failed to install package "${pkg}" using npm`,
+          getErrorMessage(err),
         )
 
         // If that didn't also work, then something is likely wrong with the "npm"
@@ -342,7 +393,10 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
           break
         } catch (err) {
           throw new Error(
-            `Failed to install package "${pkg}": ${getErrorMessage(err)}`,
+            errorMessage(
+              `Failed to install package "${pkg}"`,
+              getErrorMessage(err),
+            ),
           )
         }
       }

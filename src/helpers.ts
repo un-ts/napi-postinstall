@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import { DEFAULT_NPM_REGISTRY } from './constants.js'
+import { DEFAULT_NPM_REGISTRY, LOG_PREFIX } from './constants.js'
 import { parseTriple } from './target.js'
 import { NapiInfo, PackageJson } from './types.js'
 
@@ -59,7 +59,9 @@ export function getNapiInfoFromPackageJson(
 
   if (!targets?.length) {
     throw new Error(
-      `No \`napi.targets\` nor \`napi.triples.additional\` field found in \`${name}\`'s \`package.json\`. Please ensure the package is built with NAPI support.`,
+      errorMessage(
+        `No \`napi.targets\` nor \`napi.triples.additional\` field found in \`${name}\`'s \`package.json\`. Please ensure the package is built with NAPI support.`,
+      ),
     )
   }
 
@@ -90,7 +92,9 @@ export function getNapiInfoFromPackageJson(
     if (version) {
       if (checkVersion && version !== packageVersion) {
         throw new Error(
-          `Inconsistent package versions found for \`${name}\` with \`${pkg}\` v${packageVersion} vs v${version}.`,
+          errorMessage(
+            `Inconsistent package versions found for \`${name}\` with \`${pkg}\` v${packageVersion} vs v${version}.`,
+          ),
         )
       }
     } else if (packageVersion) {
@@ -267,4 +271,12 @@ export function getNapiNativeTargets() {
 
 export function getErrorMessage(err: unknown) {
   return (err as Error | undefined)?.message || String(err)
+}
+
+export function errorLog(message: string, ...args: unknown[]) {
+  console.error(`${LOG_PREFIX}${message}`, ...args)
+}
+
+export function errorMessage(message: string, extra?: string) {
+  return `${LOG_PREFIX}${message}` + (extra ? ': ' + extra : '')
 }

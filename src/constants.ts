@@ -4,9 +4,11 @@ import { PackageJson } from './types.js'
 
 export const DEFAULT_NPM_REGISTRY = 'https://registry.npmjs.org/'
 
-export const { name, version } = require(
+export const meta = require(
   path.resolve(__dirname, '../package.json'),
 ) as PackageJson
+
+const { name, version } = meta
 
 export const LOG_PREFIX = `[${name}@${version}] `
 
