@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.3
+
+### Patch Changes
+
+- [#27](https://github.com/un-ts/napi-postinstall/pull/27) [`f52b3e9`](https://github.com/un-ts/napi-postinstall/commit/f52b3e9c8056df85b4c16faab29c26bc830fe49a) Thanks [@JounQin](https://github.com/JounQin)! - fix: `newPath` dir could be unavailable, make sure it's already there
+
 ## 0.2.2
 
 ### Patch Changes
