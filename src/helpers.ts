@@ -37,7 +37,7 @@ export function removeRecursive(dir: string) {
 
 export function downloadedNodePath(name: string, subpath: string) {
   const pkgLibDir = path.dirname(require.resolve(name + '/package.json'))
-  return path.join(pkgLibDir, `${path.basename(subpath)}`)
+  return path.join(pkgLibDir, path.basename(subpath))
 }
 
 export function getNapiInfoFromPackageJson(
