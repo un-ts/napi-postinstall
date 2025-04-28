@@ -139,8 +139,9 @@ function installUsingNPM(
       fs.unlinkSync(packageJsonPath)
     }
 
+    const nodeModulesDir = path.join(installDir, 'node_modules')
+
     try {
-      const nodeModulesDir = path.join(installDir, 'node_modules')
       if (isWasm32Wasi) {
         const newNodeModulesDir = path.resolve(installDir, '../node_modules')
         const dirs = fs.readdirSync(nodeModulesDir)
@@ -200,10 +201,7 @@ function installUsingNPM(
       // Move the downloaded binary executable into place. The destination path
       // is the same one that the JavaScript API code uses so it will be able to
       // find the binary executable here later.
-      fs.renameSync(
-        path.join(installDir, 'node_modules', pkg, subpath),
-        nodePath,
-      )
+      fs.renameSync(path.join(nodeModulesDir, pkg, subpath), nodePath)
     }
   } finally {
     try {
@@ -328,6 +326,11 @@ export async function checkAndPreparePackage(
       require.resolve(`${pkg}/${subpath}`)
       break
     } catch {
+      try {
+        // Check whether it's already been patched
+        require.resolve(`${name}/${subpath}`)
+        break
+      } catch {}
       if (isPnp()) {
         if (isWasm32Wasi) {
           try {
@@ -374,6 +377,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
           '../..',
         )
         nodePath = path.join(nodeModulesDir, name, subpath)
+        fs.mkdirSync(path.dirname(nodePath), { recursive: true })
       }
       try {
         errorLog(`Trying to install package "${pkg}" using npm`)
