@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.4
+
+### Patch Changes
+
+- [#32](https://github.com/un-ts/napi-postinstall/pull/32) [`6195df6`](https://github.com/un-ts/napi-postinstall/commit/6195df6f93c1418603e54c0ad8c3e9eea3b0f35b) Thanks [@JounQin](https://github.com/JounQin)! - fix: target `ES2020` for Node <15 compatibility
+
 ## 0.2.3
 
 ### Patch Changes
