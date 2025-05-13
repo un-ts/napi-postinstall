@@ -128,5 +128,5 @@ Detailed changes for each release are documented in [CHANGELOG.md](./CHANGELOG.m
 [swc-core]: https://github.com/swc-project/swc
 [unrs-resolver]: https://github.com/unrs/unrs-resolver
 [1stG.me]: https://www.1stG.me
-[JounQin]: https://GitHub.com/JounQin
+[JounQin]: https://github.com/JounQin
 [MIT]: http://opensource.org/licenses/MIT
