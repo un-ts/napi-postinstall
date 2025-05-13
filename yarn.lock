@@ -11459,7 +11459,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^5.2.0"
     github-markdown-css: "npm:^5.8.1"
     nano-staged: "npm:^0.8.0"
-    napi-postinstall: "npm:^0.2.3"
+    napi-postinstall: "npm:^0.2.4"
     prettier: "npm:^3.5.3"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
