@@ -7,6 +7,6 @@
     "paths": {
       "napi-postinstall": ["./src/index.ts"]
     },
-    "target": "ES2021"
+    "target": "ES2020"
   }
 }
