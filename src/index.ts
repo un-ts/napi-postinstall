@@ -26,7 +26,10 @@ function fetch(url: string) {
     https
       .get(url, res => {
         if (
-          (res.statusCode === 301 || res.statusCode === 302) &&
+          (res.statusCode === 301 ||
+            res.statusCode === 302 ||
+            res.statusCode === 307 ||
+            res.statusCode === 308) &&
           res.headers.location
         ) {
           fetch(res.headers.location).then(resolve, reject)
