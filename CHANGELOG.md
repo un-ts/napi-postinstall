@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.2.5
+
+### Patch Changes
+
+- [#38](https://github.com/un-ts/napi-postinstall/pull/38) [`76b34bd`](https://github.com/un-ts/napi-postinstall/commit/76b34bd25c29e53bcbedf1c51de945b8b49234f1) Thanks [@WooWan](https://github.com/WooWan)! - feat: handle 307 and 308 redirect status codes
+
 ## 0.2.4
 
 ### Patch Changes
