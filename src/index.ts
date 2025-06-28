@@ -27,7 +27,11 @@ function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {
     https
       .get(url, res => {
-        if (REDIRECT_STATUS_CODES.has(res.statusCode) && res.headers.location) {
+        if (
+          res.statusCode &&
+          REDIRECT_STATUS_CODES.has(res.statusCode) &&
+          res.headers.location
+        ) {
           fetch(res.headers.location).then(resolve, reject)
           return
         }
