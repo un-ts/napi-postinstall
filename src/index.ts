@@ -21,17 +21,13 @@ import type { PackageJson } from './types.js'
 
 export type * from './types.js'
 
+const REDIRECT_STATUS_CODES = new Set([301, 302, 307, 308])
+
 function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {
     https
       .get(url, res => {
-        if (
-          (res.statusCode === 301 ||
-            res.statusCode === 302 ||
-            res.statusCode === 307 ||
-            res.statusCode === 308) &&
-          res.headers.location
-        ) {
+        if (REDIRECT_STATUS_CODES.has(res.statusCode) && res.headers.location) {
           fetch(res.headers.location).then(resolve, reject)
           return
         }
