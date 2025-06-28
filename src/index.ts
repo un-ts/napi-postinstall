@@ -28,8 +28,7 @@ function fetch(url: string) {
     https
       .get(url, res => {
         if (
-          res.statusCode &&
-          REDIRECT_STATUS_CODES.has(res.statusCode) &&
+          REDIRECT_STATUS_CODES.has(res.statusCode!) &&
           res.headers.location
         ) {
           fetch(res.headers.location).then(resolve, reject)
