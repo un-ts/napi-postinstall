@@ -251,6 +251,12 @@ export function getNapiNativeTarget(): string[] | string {
 
       break
     }
+    case 'aix':{
+      return 'aix-ppc64'
+    }
+    case 'os400':{
+      return 'os400-ppc64'
+    }
   }
 
   return []
