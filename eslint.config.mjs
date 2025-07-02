@@ -10,8 +10,8 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       'sonarjs/file-permissions': 'off',
       'sonarjs/no-os-command-from-path': 'off',
-      'unicorn/import-style': 'off',
-      'unicorn/prefer-top-level-await': 'off',
+      'unicorn-x/import-style': 'off',
+      'unicorn-x/prefer-top-level-await': 'off',
     },
   },
   {
