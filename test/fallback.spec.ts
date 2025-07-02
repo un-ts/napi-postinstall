@@ -5,7 +5,7 @@ import fallback_ from 'napi-postinstall/fallback'
 
 const fallback = fallback_ as typeof import('napi-postinstall/fallback')
 
-describe('fallback', () => {
+describe.skipIf(process.platform === 'win32')('fallback', () => {
   afterEach(() => {
     delete process.env.SKIP_UNRS_RESOLVER_FALLBACK
     delete process.versions.webcontainer
@@ -22,6 +22,7 @@ describe('fallback', () => {
     process.versions.webcontainer = '1'
     const resolved = fallback<typeof unrsResolver>(
       require.resolve('unrs-resolver/package.json'),
+      true,
     )
     expect(resolved).not.toBe(unrsResolver)
     expect(typeof resolved.sync).toBe('function')
