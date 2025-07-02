@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.0
+
+### Minor Changes
+
+- [#40](https://github.com/un-ts/napi-postinstall/pull/40) [`d4719ff`](https://github.com/un-ts/napi-postinstall/commit/d4719ff3f0ab55381ef715d11d09ca537ab7a59e) Thanks [@JounQin](https://github.com/JounQin)! - feat: add runtime fallback and webcontainer support
+
 ## 0.2.5
 
 ### Patch Changes
