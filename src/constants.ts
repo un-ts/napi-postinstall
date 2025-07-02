@@ -1,6 +1,6 @@
 import * as path from 'node:path'
 
-import { PackageJson } from './types.js'
+import type { PackageJson } from './types.js'
 
 export const DEFAULT_NPM_REGISTRY = 'https://registry.npmjs.org/'
 
