@@ -1,7 +1,7 @@
 // based on https://github.com/napi-rs/napi-rs/blob/2eb2ab619f9fb924453e21d2198fe67ea21b9680/cli/src/utils/target.ts
 
 import { EABI, WASI, WASM32, WASM32_WASI } from './constants.js'
-import { NodeJSArch, Platform, Target } from './types.js'
+import type { NodeJSArch, Platform, Target } from './types.js'
 
 const CpuToNodeArch: Record<string, NodeJSArch> = {
   x86_64: 'x64',

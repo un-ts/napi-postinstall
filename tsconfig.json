@@ -5,7 +5,8 @@
     "esModuleInterop": false,
     "rootDir": ".",
     "paths": {
-      "napi-postinstall": ["./src/index.ts"]
+      "napi-postinstall": ["./src/index.ts"],
+      "napi-postinstall/fallback": ["./src/fallback.ts"]
     },
     "target": "ES2020"
   }

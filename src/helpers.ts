@@ -4,7 +4,7 @@ import * as path from 'node:path'
 
 import { DEFAULT_NPM_REGISTRY, LOG_PREFIX } from './constants.js'
 import { parseTriple } from './target.js'
-import { NapiInfo, PackageJson } from './types.js'
+import type { NapiInfo, PackageJson } from './types.js'
 
 export function getGlobalNpmRegistry() {
   try {
