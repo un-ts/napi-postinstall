@@ -22,6 +22,9 @@ describe('npm fixture', () => {
     const res = await exec('npm', ['install'], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'npm'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
       },
     })
     expect(removeUnrelatedWarnings(res.stderr)).toBe('')
@@ -33,6 +36,9 @@ describe('npm-10 fixture', () => {
     const res = await exec('npm', ['install'], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'npm-10'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
       },
     })
     expect(removeUnrelatedWarnings(res.stderr)).toBe('')
@@ -44,6 +50,9 @@ describe('pnpm fixture', () => {
     const res = await exec('pnpm', ['install'], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'pnpm'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
       },
     })
     expect(removeUnrelatedWarnings(res.stderr)).toBe('')
@@ -55,6 +64,9 @@ describe('yarn fixture', () => {
     const res = await exec('yarn', [], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'yarn'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
       },
     })
     expect(removeUnrelatedWarnings(res.stderr)).toBe('')
@@ -66,6 +78,9 @@ describe('yarn pnp fixture', () => {
     const res = await exec('yarn', [], {
       nodeOptions: {
         cwd: path.resolve(fixtures, 'yarn-pnp'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
       },
     })
     expect(removeUnrelatedWarnings(res.stderr)).toBe('')
