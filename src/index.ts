@@ -2,6 +2,7 @@
 
 import { execSync } from 'node:child_process'
 import * as fs from 'node:fs'
+import * as http from 'node:http'
 import * as https from 'node:https'
 import * as path from 'node:path'
 import * as zlib from 'node:zlib'
@@ -25,7 +26,9 @@ const REDIRECT_STATUS_CODES = new Set([301, 302, 307, 308])
 
 function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {
-    https
+    const apiClient = url.startsWith('http://') ? http : https
+
+    apiClient
       .get(url, res => {
         if (
           REDIRECT_STATUS_CODES.has(res.statusCode!) &&
