@@ -26,7 +26,7 @@ const REDIRECT_STATUS_CODES = new Set([301, 302, 307, 308])
 
 function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {
-    const apiClient = url.startsWith('https://') ? https : http
+    const apiClient = url.startsWith('http://') ? http : https
 
     apiClient
       .get(url, res => {
