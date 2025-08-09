@@ -244,6 +244,35 @@ async function downloadDirectlyFromNPM(
   }
 }
 
+async function resolvePackageJson(
+  packageName: string,
+  versionOrCheckVersion?: boolean | string,
+): Promise<PackageJson> {
+  try {
+    return require(packageName + `/${PACKAGE_JSON}`) as PackageJson
+  } catch {
+    // could fail with `pnpm`, `yarn` v2+, etc
+    try {
+      // Postinstall scripts run in the directory of the package that invokes them.
+      // Try reading the package.json from there
+      return JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')) as PackageJson
+    } catch {
+      // Final fallback - try to fetch package.json from npm
+      if (typeof versionOrCheckVersion !== 'string') {
+        throw new TypeError(
+          errorMessage(
+            `Failed to load \`${PACKAGE_JSON}\` from \`${packageName}\`, please provide a version.`,
+          ),
+        )
+      }
+      const packageJsonBuffer = await fetch(
+        `${getGlobalNpmRegistry()}${packageName}/${versionOrCheckVersion}`,
+      )
+      return JSON.parse(packageJsonBuffer.toString('utf8')) as PackageJson
+    }
+  }
+}
+
 export async function checkAndPreparePackage(
   packageName: string,
   version?: string,
@@ -262,27 +291,10 @@ export async function checkAndPreparePackage(
   let packageJson: PackageJson
 
   if (typeof packageNameOrPackageJson === 'string') {
-    try {
-      packageJson = require(
-        packageNameOrPackageJson + `/${PACKAGE_JSON}`,
-      ) as PackageJson
-    } catch {
-      // could fail with `pnpm`, `yarn` v2+, etc, fallback to load from npm registry instead
-      if (typeof versionOrCheckVersion !== 'string') {
-        throw new TypeError(
-          errorMessage(
-            `Failed to load \`${PACKAGE_JSON}\` from \`${packageNameOrPackageJson}\`, please provide a version.`,
-          ),
-        )
-      }
-      const pkg = packageNameOrPackageJson
-      const packageJsonBuffer = await fetch(
-        `${getGlobalNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
-      )
-      packageJson = JSON.parse(
-        packageJsonBuffer.toString('utf8'),
-      ) as PackageJson
-    }
+    packageJson = await resolvePackageJson(
+      packageNameOrPackageJson,
+      versionOrCheckVersion,
+    )
   } else {
     packageJson = packageNameOrPackageJson
     if (
