@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.3.3
+
+### Patch Changes
+
+- [#47](https://github.com/un-ts/napi-postinstall/pull/47) [`8447abb`](https://github.com/un-ts/napi-postinstall/commit/8447abbbd8cd8aa2640f7b0e58643f386f75eb78) Thanks [@WooWan](https://github.com/WooWan)! - feat: support for HTTP protocol in private registries
+
+- [#51](https://github.com/un-ts/napi-postinstall/pull/51) [`1d9c7d5`](https://github.com/un-ts/napi-postinstall/commit/1d9c7d56ce5266046409167ba31fb9aa079c3d9e) Thanks [@mrginglymus](https://github.com/mrginglymus)! - feat: try reading `package.json` from `cwd` for cli usage
+
 ## 0.3.0
 
 ### Minor Changes
