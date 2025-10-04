@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.4
+
+### Patch Changes
+
+- [#56](https://github.com/un-ts/napi-postinstall/pull/56) [`9ce741b`](https://github.com/un-ts/napi-postinstall/commit/9ce741b33e71f450a6537198ba9c0316ce4380de) Thanks [@JounQin](https://github.com/JounQin)! - feat: add support for loong64 arch and openharmony platform
+
 ## 0.3.3
 
 ### Patch Changes
