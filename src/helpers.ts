@@ -4,7 +4,7 @@ import * as path from 'node:path'
 
 import { DEFAULT_NPM_REGISTRY, LOG_PREFIX } from './constants.js'
 import { parseTriple } from './target.js'
-import type { NapiInfo, PackageJson } from './types.js'
+import type { NapiInfo, PackageJson, Platform } from './types.js'
 
 export function getGlobalNpmRegistry() {
   try {
@@ -170,9 +170,10 @@ function isMuslFromChildProcess() {
   }
 }
 
+// https://github.com/napi-rs/napi-rs/blob/2cdf5fd6fb26ba32aaa9a8e8d4ad5020536ce0de/examples/napi/index.cjs#L66
 // eslint-disable-next-line sonarjs/cognitive-complexity, sonarjs/function-return-type
 export function getNapiNativeTarget(): string[] | string {
-  switch (process.platform) {
+  switch (process.platform as Platform) {
     case 'android': {
       if (process.arch === 'arm64') {
         return 'android-arm64'
@@ -185,7 +186,16 @@ export function getNapiNativeTarget(): string[] | string {
     }
     case 'win32': {
       if (process.arch === 'x64') {
-        return 'win32-x64-msvc'
+        const targets: string[] = []
+        if (
+          (
+            process.report.getReport() as { header?: { osName?: string } }
+          ).header?.osName?.startsWith('MINGW')
+        ) {
+          targets.push('win32-x64-gnu')
+        }
+        targets.push('win32-x64-msvc')
+        return targets
       }
       if (process.arch === 'ia32') {
         return 'win32-ia32-msvc'
@@ -236,6 +246,12 @@ export function getNapiNativeTarget(): string[] | string {
         }
         return 'linux-arm-gnueabihf'
       }
+      if (process.arch === 'loong64') {
+        if (isMusl()) {
+          return 'linux-loong64-musl'
+        }
+        return 'linux-loong64-gnu'
+      }
       if (process.arch === 'riscv64') {
         if (isMusl()) {
           return 'linux-riscv64-musl'
@@ -247,6 +263,19 @@ export function getNapiNativeTarget(): string[] | string {
       }
       if (process.arch === 's390x') {
         return 'linux-s390x-gnu'
+      }
+
+      break
+    }
+    case 'openharmony': {
+      if (process.arch === 'arm64') {
+        return 'openharmony-arm64'
+      }
+      if (process.arch === 'x64') {
+        return 'openharmony-x64'
+      }
+      if (process.arch === 'arm') {
+        return 'openharmony-arm'
       }
 
       break

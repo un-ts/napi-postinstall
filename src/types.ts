@@ -1,14 +1,14 @@
 export interface Napi {
   binaryName?: string
-  /** @deprecated USe @link {binaryName} instead */
+  /** @deprecated Use @link {binaryName} instead */
   name?: string
   packageName?: string
-  /** @deprecated USe @link {packageName} instead */
+  /** @deprecated Use @link {packageName} instead */
   package?: {
     name: string
   }
   targets?: string[]
-  /** @deprecated USe @link {targets} instead */
+  /** @deprecated Use @link {targets} instead */
   triples?: {
     defaults?: boolean
     additional?: string[]
@@ -32,7 +32,7 @@ export interface PackageJson {
   napi?: Napi
 }
 
-export type Platform = NodeJS.Platform | 'wasi' | 'wasm'
+export type Platform = NodeJS.Platform | 'openharmony' | 'wasi' | 'wasm'
 
 export type NodeJSArch = NodeJS.Architecture | 'universal' | 'wasm32' | 'x32'
 
