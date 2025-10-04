@@ -8,6 +8,7 @@ const CpuToNodeArch: Record<string, NodeJSArch> = {
   aarch64: 'arm64',
   i686: 'ia32',
   armv7: 'arm',
+  loongarch64: 'loong64',
   riscv64gc: 'riscv64',
   powerpc64le: 'ppc64',
 }
@@ -17,23 +18,20 @@ const SysToNodePlatform: Record<string, Platform> = {
   freebsd: 'freebsd',
   darwin: 'darwin',
   windows: 'win32',
+  ohos: 'openharmony',
 }
 
+const SUB_SYSTEMS = new Set(['android', 'ohos'])
+
 /**
- * A triple is a specific format for specifying a target architecture. Triples
- * may be referred to as a target triple which is the architecture for the
- * artifact produced, and the host triple which is the architecture that the
- * compiler is running on. The general format of the triple is
- * `<arch><sub>-<vendor>-<sys>-<abi>` where:
- *
- * - `arch` = The base CPU architecture, for example `x86_64`, `i686`, `arm`,
- *   `thumb`, `mips`, etc.
- * - `sub` = The CPU sub-architecture, for example `arm` has `v7`, `v7s`, `v5te`,
- *   etc.
- * - `vendor` = The vendor, for example `unknown`, `apple`, `pc`, `nvidia`, etc.
- * - `sys` = The system name, for example `linux`, `windows`, `darwin`, etc. none
- *   is typically used for bare-metal without an OS.
- * - `abi` = The ABI, for example `gnu`, `android`, `eabi`, etc.
+ * A triple is a specific format for specifying a target architecture.
+ * Triples may be referred to as a target triple which is the architecture for the artifact produced, and the host triple which is the architecture that the compiler is running on.
+ * The general format of the triple is `<arch><sub>-<vendor>-<sys>-<abi>` where:
+ *   - `arch` = The base CPU architecture, for example `x86_64`, `i686`, `arm`, `thumb`, `mips`, etc.
+ *   - `sub` = The CPU sub-architecture, for example `arm` has `v7`, `v7s`, `v5te`, etc.
+ *   - `vendor` = The vendor, for example `unknown`, `apple`, `pc`, `nvidia`, etc.
+ *   - `sys` = The system name, for example `linux`, `windows`, `darwin`, etc. none is typically used for bare-metal without an OS.
+ *   - `abi` = The ABI, for example `gnu`, `android`, `eabi`, etc.
  */
 export function parseTriple(rawTriple: string): Target {
   if (
@@ -62,14 +60,20 @@ export function parseTriple(rawTriple: string): Target {
     ;[cpu, sys] = triples
   } else {
     // aarch64-unknown-linux-musl
-    // ^ cpu           ^ sys ^ abi
+    // ^ cpu   ^vendor ^ sys ^ abi
     // aarch64-apple-darwin
     // ^ cpu         ^ sys  (abi is None)
     ;[cpu, , sys, abi = null] = triples
   }
 
+  if (abi && SUB_SYSTEMS.has(abi)) {
+    sys = abi
+    // eslint-disable-next-line sonarjs/no-redundant-assignments
+    abi = null
+  }
   const platform = SysToNodePlatform[sys] ?? (sys as Platform)
   const arch = CpuToNodeArch[cpu] ?? (cpu as NodeJSArch)
+
   return {
     triple: rawTriple,
     platformArchABI: abi ? `${platform}-${arch}-${abi}` : `${platform}-${arch}`,
