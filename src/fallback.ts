@@ -15,7 +15,7 @@ const EXECUTORS = {
   deno: (args: string[]) => ['deno', 'run', `npm:${args[0]}`, ...args.slice(1)],
 }
 
-const WEB_CONTAINER_PNPM = 'pnpm@10'
+const PINNED_PNPM_SPECIFIER = 'pnpm@10'
 
 function constructCommand(
   value: string[] | string | ((args: string[]) => string[]),
@@ -88,7 +88,7 @@ function fallback<T = unknown>(
         errorMessage(`Downloading \`${bindingPkg}\` on WebContainer...`),
       )
 
-      execFileSync('npx', [WEB_CONTAINER_PNPM, 'i', bindingPkg], {
+      execFileSync('npx', [PINNED_PNPM_SPECIFIER, 'i', bindingPkg], {
         cwd: baseDir,
         stdio: 'inherit',
       })
