@@ -5,6 +5,7 @@ import * as path from 'node:path'
 
 import { WASM32_WASI } from './constants.js'
 import { errorMessage, getNapiInfoFromPackageJson } from './helpers.js'
+import { parseTriple } from './target.js'
 import type { PackageJson } from './types.js'
 
 const EXECUTORS = {
@@ -63,8 +64,8 @@ function fallback<T = unknown>(
 
     // napi keeps the WASI fallback out of `optionalDependencies` when it is not
     // the only target, so also accept the configured `napi.targets`.
-    const hasWasiTarget = napi.targets?.some(target =>
-      target.startsWith(WASM32_WASI),
+    const hasWasiTarget = napi.targets?.some(
+      target => parseTriple(target).platformArchABI === WASM32_WASI,
     )
 
     if (!optionalDependencies?.[bindingPkgName] && !hasWasiTarget) {

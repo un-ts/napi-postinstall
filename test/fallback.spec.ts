@@ -100,6 +100,36 @@ describe.skipIf(process.platform === 'win32')('fallback', () => {
     }
   })
 
+  it('should reject non-WASI wasm32 targets', () => {
+    const fixtureDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'napi-postinstall-'),
+    )
+    const packageJsonPath = path.join(fixtureDir, 'package.json')
+
+    fs.writeFileSync(
+      packageJsonPath,
+      JSON.stringify({
+        name: 'fake-wasix-target',
+        version: '1.0.0',
+        napi: {
+          binaryName: 'fake',
+          packageName: '@fake/binding',
+          targets: ['wasm32-wasix'],
+        },
+      }),
+    )
+
+    process.versions.webcontainer = '1'
+
+    try {
+      expect(() => fallback(packageJsonPath, true)).toThrow(
+        'target is unavailable',
+      )
+    } finally {
+      fs.rmSync(fixtureDir, { force: true, recursive: true })
+    }
+  })
+
   it('should support webcontainer', () => {
     process.versions.webcontainer = '1'
     const resolved = fallback<typeof unrsResolver>(
