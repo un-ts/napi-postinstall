@@ -13,7 +13,11 @@
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![changesets](https://img.shields.io/badge/maintained%20with-changesets-176de3.svg)](https://github.com/changesets/changesets)
 
-The `postinstall` script helper for handling native bindings in legacy `npm` versions, this is a reimplementation of the [`node-install`][node-install] functionality from [`esbuild`][esbuild] for [`napi-rs`][napi-rs] ecosystem packages like [`rollup`][rollup], [`@swc/core`][swc-core] and [`unrs-resolver`][unrs-resolver].
+The `postinstall` script helper for handling native bindings in `npm` versions
+affected by [npm/cli#4828](https://github.com/npm/cli/issues/4828). This is a
+reimplementation of the [`node-install`][node-install] functionality from
+[`esbuild`][esbuild] for [`napi-rs`][napi-rs] ecosystem packages like
+[`rollup`][rollup], [`@swc/core`][swc-core] and [`unrs-resolver`][unrs-resolver].
 
 For more details, please refer to the following issues:
 
@@ -24,6 +28,8 @@ For more details, please refer to the following issues:
 ## TOC <!-- omit in toc -->
 
 - [Usage](#usage)
+  - [TL;DR for package users](#tldr-for-package-users)
+  - [Notes for package authors](#notes-for-package-authors)
   - [Install](#install)
   - [CLI](#cli)
   - [API](#api)
@@ -36,6 +42,36 @@ For more details, please refer to the following issues:
 - [License](#license)
 
 ## Usage
+
+### TL;DR for package users
+
+You usually don't need to install `napi-postinstall` yourself — it is a
+`postinstall` helper used by some napi-rs packages.
+
+- It works around [npm/cli#4828](https://github.com/npm/cli/issues/4828), where
+  `npm` can fail to install the correct platform-specific optional dependency.
+- `pnpm` and `yarn` resolve optional dependencies correctly in most cases, so
+  the helper is usually a no-op there. Leaving install scripts enabled is the
+  safe default.
+- If your package manager warns about ignored build scripts, allow the build
+  script for the dependency that needs it. For `pnpm` 10+, run
+  `pnpm approve-builds`, or add that dependency (for example `unrs-resolver`,
+  not `napi-postinstall`) to
+  [`ignoredBuiltDependencies`][ignored-built-dependencies] to silence the
+  warning when installation already works.
+- If the native binding fails to load, re-enable install scripts and reinstall.
+
+### Notes for package authors
+
+If your package runs `napi-postinstall` in `postinstall`, you can copy this note
+into your own README:
+
+> This package uses `napi-postinstall` so the correct native binding is
+> installed on `npm` versions affected by
+> [npm/cli#4828](https://github.com/npm/cli/issues/4828). `pnpm` and `yarn`
+> normally handle optional dependencies themselves; if your package manager
+> reports ignored build scripts, you can allow the script or safely ignore it
+> when the native binding already loads.
 
 ### Install
 
@@ -142,6 +178,7 @@ Detailed changes for each release are documented in [CHANGELOG.md](./CHANGELOG.m
 [rollup]: https://github.com/rollup/rollup
 [swc-core]: https://github.com/swc-project/swc
 [unrs-resolver]: https://github.com/unrs/unrs-resolver
+[ignored-built-dependencies]: https://pnpm.io/settings#ignoredbuiltdependencies
 [1stG.me]: https://www.1stG.me
 [JounQin]: https://github.com/JounQin
 [MIT]: http://opensource.org/licenses/MIT
