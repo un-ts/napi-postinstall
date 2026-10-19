@@ -35,11 +35,22 @@ function constructCommand(
 }
 
 /**
- * Fallback for webcontainer and docker environments like
+ * Loads a binding as a fallback for WebContainer and Docker environments like
  * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  *
+ * In WebContainer, loads the WASI entry from a temporary cache, installing it with
+ * pnpm if absent. WASI must be declared in optionalDependencies or napi.targets.
+ * Otherwise, runs napi-postinstall through the detected package manager, sets
+ * the package's SKIP_*_FALLBACK environment variable, clears its entry from the
+ * require cache, and reloads it. Normalizes the package's napi metadata in place.
+ *
  * @param packageJsonPath The absolute path to the package.json file.
- * @param checkVersion Whether to check version matching
+ * @param checkVersion Whether to require matching versions across declared target
+ * dependencies and the host package.
+ * @returns The WASI entry's exports in WebContainer, or the reloaded package's exports.
+ * @throws {Error} If NAPI targets are missing, requested version checks fail, WASI
+ * is unavailable in WebContainer, or the package manager is unsupported. Module
+ * loading, filesystem, and package manager execution errors propagate.
  */
 function fallback<T = unknown>(
   packageJsonPath: string,

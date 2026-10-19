@@ -252,6 +252,25 @@ async function downloadDirectlyFromNPM(
   }
 }
 
+/**
+ * Checks for a binding for the current platform and attempts to install it if missing.
+ * Non-WASI bindings must be declared in optionalDependencies; WASI bindings may
+ * also be enabled by napi.targets. Normalizes the package's napi metadata in place.
+ * Installation may run package managers, download files, and write to disk.
+ *
+ * Accepts a package name or package.json object. With a name, version is used only
+ * to fetch metadata from the registry when the local package.json cannot be loaded.
+ * Pass checkVersion as the third argument with a name or the second with an object
+ * to require matching versions across declared target dependencies and the host.
+ *
+ * @returns Resolves without a value, including when no target is eligible or
+ * installation is skipped for P'n'P or a read-only temporary directory.
+ * @throws {TypeError} If local metadata cannot be loaded and no version is supplied.
+ * @throws {Error} If NAPI targets are missing, requested version checks fail, or
+ * metadata fetching or parsing fails. Path resolution and filesystem errors can
+ * propagate; if both npm installation and direct download fail, rejects with an
+ * installation error whose cause is the direct download error.
+ */
 export async function checkAndPreparePackage(
   packageName: string,
   version?: string,

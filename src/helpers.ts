@@ -298,6 +298,10 @@ export function getNapiNativeTargets() {
   return [targets, WASI_TARGET]
 }
 
+/**
+ * Checks whether any target triple normalizes to the WASI binding target.
+ * Returns false for an empty list or no match, and undefined for an omitted list.
+ */
 export function hasWasiTarget(targets?: string[]) {
   return targets?.some(
     target => parseTriple(target).platformArchABI === WASM32_WASI,
