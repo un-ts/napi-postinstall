@@ -17,8 +17,13 @@ export function getGlobalNpmRegistry() {
   }
 }
 
-export function copyNpmrcTo(dir: string, cwd = process.cwd()) {
-  const npmrc = path.join(cwd, '.npmrc')
+export function copyNpmrcTo(dir: string, cwd?: string) {
+  const sourceDir =
+    cwd ||
+    process.env.npm_config_local_prefix ||
+    process.env.INIT_CWD ||
+    process.cwd()
+  const npmrc = path.join(sourceDir, '.npmrc')
   if (fs.existsSync(npmrc)) {
     fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
   }

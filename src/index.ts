@@ -130,8 +130,8 @@ function installUsingNPM(
     fs.writeFileSync(packageJsonPath, '{}')
 
     // The temporary directory has its own package.json, so npm treats it as the
-    // project root. Copy the caller's .npmrc there to keep its registry, auth
-    // token and other settings visible to the nested install.
+    // project root. Copy the caller's project .npmrc there to keep its registry,
+    // auth token and other settings visible to the nested install.
     copyNpmrcTo(installDir)
 
     // Run "npm install" in the temporary directory which should download the
