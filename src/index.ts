@@ -14,7 +14,7 @@ import {
   errorLog,
   errorMessage,
   getErrorMessage,
-  getGlobalNpmRegistry,
+  getNpmRegistry,
   getNapiInfoFromPackageJson,
   getNapiNativeTargets,
   hasWasiTarget,
@@ -245,7 +245,7 @@ async function downloadDirectlyFromNPM(
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `${getGlobalNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const url = `${getNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     fs.writeFileSync(
@@ -291,7 +291,7 @@ export async function checkAndPreparePackage(
       }
       const pkg = packageNameOrPackageJson
       const packageJsonBuffer = await fetch(
-        `${getGlobalNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
+        `${getNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),

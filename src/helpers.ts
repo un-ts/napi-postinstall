@@ -12,11 +12,12 @@ function getProjectDir() {
   )
 }
 
-export function getGlobalNpmRegistry(cwd = getProjectDir()) {
+export function getNpmRegistry(cwd = getProjectDir()) {
   try {
-    const registry = execSync('npm config get registry', {
+    const registry = execSync('npm config get registry --force', {
       cwd,
       encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
     return registry.endsWith('/') ? registry : `${registry}/`
   } catch {

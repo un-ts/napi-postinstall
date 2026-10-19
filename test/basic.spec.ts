@@ -7,7 +7,7 @@ import type { PackageJson } from 'napi-postinstall'
 
 import {
   copyNpmrcTo,
-  getGlobalNpmRegistry,
+  getNpmRegistry,
   hasWasiTarget,
 } from '../src/helpers.js'
 
@@ -81,13 +81,21 @@ describe('napi-postinstall', () => {
       fs.mkdirSync(installDir, { recursive: true })
       const content = 'registry=https://registry.example.test/\n'
       fs.writeFileSync(path.join(root, '.npmrc'), content)
+      fs.writeFileSync(
+        path.join(root, 'package.json'),
+        JSON.stringify({
+          devEngines: {
+            packageManager: { name: 'pnpm', version: '10.9.0' },
+          },
+        }),
+      )
 
       copyNpmrcTo(installDir, root)
 
       expect(fs.readFileSync(path.join(installDir, '.npmrc'), 'utf8')).toBe(
         content,
       )
-      expect(getGlobalNpmRegistry(root)).toBe('https://registry.example.test/')
+      expect(getNpmRegistry(root)).toBe('https://registry.example.test/')
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }
