@@ -12,7 +12,7 @@
     "postinstall": "napi-postinstall rolldown 1.2.14 check"
   },
   "devDependencies": {
-    "napi-postinstall": "link:../../..",
+    "napi-postinstall": "file:../../..",
     "rolldown": "^1.2.14"
   }
 }

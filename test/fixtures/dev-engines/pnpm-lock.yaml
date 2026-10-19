@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       napi-postinstall:
-        specifier: link:../../..
-        version: link:../../..
+        specifier: file:../../..
+        version: file:../../..
       rolldown:
         specifier: ^1.2.14
         version: 1.2.14
@@ -119,6 +119,11 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
+  napi-postinstall@file:../../..:
+    resolution: {directory: ../../.., type: directory}
+    engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+    hasBin: true
+
   rolldown@1.2.14:
     resolution: {integrity: sha512-eTBTTqMR6uHKLgcUqpJP8ntzDI6V4LYA8negAMBEI7gkgVvOdrx6VsvS2Ym+83KhOPdLCHWJu0w7UQFJZhHKNw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -174,6 +179,8 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  napi-postinstall@file:../../..: {}
 
   rolldown@1.2.14:
     dependencies:
