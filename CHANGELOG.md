@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.3.5
+
+### Patch Changes
+
+- [#63](https://github.com/un-ts/napi-postinstall/pull/63) [`7ef37fe`](https://github.com/un-ts/napi-postinstall/commit/7ef37febcc89454061fd0692d7d56e5278924970) Thanks [@JounQin](https://github.com/JounQin)! - Support WASI packages that do not declare the WASI binding in `optionalDependencies`.
+
+  The fallback now checks `napi.targets` as well, matching napi's policy of keeping the WASI fallback out of `optionalDependencies` when it is not the only target.
+
 ## 0.3.4
 
 ### Patch Changes
