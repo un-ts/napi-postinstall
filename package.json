@@ -64,6 +64,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/web": "^0.0.359",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@unts/patch-package": "^8.1.1",
     "@vitejs/plugin-react-swc": "^4.0.0",
     "@vitest/coverage-v8": "^5.0.0",
@@ -89,10 +90,10 @@
     "stylelint": "^17.0.0",
     "tinyexec": "^1.0.1",
     "type-coverage": "^2.29.7",
-    "typescript": "^7.0.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^6.0.0",
-    "vitest": "^3.2.4",
+    "vitest": "^5.0.5",
     "yarn-berry-deduplicate": "^7.0.0"
   },
   "resolutions": {

@@ -54,11 +54,14 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
   } catch (err) {
     throw new Error(
       errorMessage(`Invalid gzip data in archive`, getErrorMessage(err)),
+      { cause: err },
     )
   }
-  const str = (i: number, n: number) =>
-    // eslint-disable-next-line sonarjs/slow-regex
-    String.fromCodePoint(...buffer.subarray(i, i + n)).replace(/\0.*$/, '')
+  const str = (i: number, n: number) => {
+    const value = String.fromCodePoint(...buffer.subarray(i, i + n))
+    const nullIndex = value.indexOf('\0')
+    return nullIndex === -1 ? value : value.slice(0, nullIndex)
+  }
   let offset = 0
   subpath = `package/${subpath}`
   while (offset < buffer.length) {
@@ -131,7 +134,6 @@ function installUsingNPM(
     // command instead of a HTTP request so that it hopefully works in situations
     // where HTTP requests are blocked but the "npm" command still works due to,
     // for example, a custom configured npm registry and special firewall rules.
-    // eslint-disable-next-line sonarjs/os-command
     execSync(
       `npm install --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
@@ -339,7 +341,6 @@ export async function checkAndPreparePackage(
       if (isPnp()) {
         if (isWasm32Wasi) {
           try {
-            // eslint-disable-next-line sonarjs/os-command
             execSync(`yarn add -D ${pkg}@${version}`)
           } catch (err) {
             errorLog(
@@ -406,6 +407,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
               `Failed to install package "${pkg}"`,
               getErrorMessage(err),
             ),
+            { cause: err },
           )
         }
       }

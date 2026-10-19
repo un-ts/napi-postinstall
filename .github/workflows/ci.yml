@@ -1,12 +1,19 @@
 name: CI
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request: {}
+  merge_group: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   ci:
@@ -14,8 +21,6 @@ jobs:
     strategy:
       matrix:
         node:
-          - 18
-          - 20
           - 22
           - 24
         os:
@@ -34,16 +39,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: yarn
 
-      # Node.js 18's Corepack cannot run pnpm 12, so use pnpm 10 there only.
-      - name: Install pnpm 10 on Node.js 18
-        if: matrix.node == 18
-        run: |
-          npm i -g pnpm@10.9.0
-          corepack enable yarn
-
-      # Newer Node.js versions keep the latest pnpm through Corepack.
       - name: Enable Corepack
-        if: matrix.node != 18
         run: |
           corepack enable npm
           corepack enable
@@ -69,7 +65,7 @@ jobs:
         if: ${{ !github.event.pull_request.head.repo.fork && matrix.os != 'windows-latest' }}
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
       - name: Run codacy-coverage-reporter
         # bad Windows -- https://github.com/codacy/codacy-coverage-reporter-action/issues/91

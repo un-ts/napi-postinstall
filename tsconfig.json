@@ -1,9 +1,11 @@
 {
   "extends": "@1stg/tsconfig/node",
   "compilerOptions": {
-    "allowSyntheticDefaultImports": false,
-    "esModuleInterop": false,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
     "rootDir": ".",
+    "types": ["node", "web"],
     "paths": {
       "napi-postinstall": ["./src/index.ts"],
       "napi-postinstall/fallback": ["./src/fallback.ts"]
