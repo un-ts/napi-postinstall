@@ -45,7 +45,6 @@
     "serve": "vite preview",
     "test": "vitest run",
     "typecov": "type-coverage",
-    "vercel-build": "yarn docs:build",
     "version": "changeset version && yarn --no-immutable && yarn test -u"
   },
   "devDependencies": {
