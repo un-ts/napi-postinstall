@@ -57,11 +57,9 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
       { cause: err },
     )
   }
-  const str = (i: number, n: number) => {
-    const value = String.fromCodePoint(...buffer.subarray(i, i + n))
-    const nullIndex = value.indexOf('\0')
-    return nullIndex === -1 ? value : value.slice(0, nullIndex)
-  }
+  const str = (i: number, n: number) =>
+    // eslint-disable-next-line sonarjs/super-linear-regex
+    String.fromCodePoint(...buffer.subarray(i, i + n)).replace(/\0.*$/, '')
   let offset = 0
   subpath = `package/${subpath}`
   while (offset < buffer.length) {
