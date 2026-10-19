@@ -1,8 +1,14 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, WASM32_WASI } from './constants.js'
+import {
+  DEFAULT_NPM_REGISTRY,
+  LOG_PREFIX,
+  PACKAGE_JSON,
+  WASM32_WASI,
+} from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
@@ -13,15 +19,27 @@ function getProjectDir() {
 }
 
 export function getNpmRegistry(cwd = getProjectDir()) {
+  let tempDir: string
   try {
-    const registry = execSync('npm config get registry --force', {
-      cwd,
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+  } catch {
+    return DEFAULT_NPM_REGISTRY
+  }
+  try {
+    copyNpmrcTo(tempDir, cwd)
+    fs.writeFileSync(path.join(tempDir, PACKAGE_JSON), '{}')
+    const registry = execSync('npm config get registry', {
+      cwd: tempDir,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
     return registry.endsWith('/') ? registry : `${registry}/`
   } catch {
     return DEFAULT_NPM_REGISTRY
+  } finally {
+    try {
+      removeRecursive(tempDir)
+    } catch {}
   }
 }
 
