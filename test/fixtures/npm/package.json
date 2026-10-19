@@ -3,10 +3,10 @@
   "private": true,
   "packageManager": "npm@11.3.0",
   "scripts": {
-    "postinstall": "napi-postinstall rollup 4.40.0 check"
+    "postinstall": "napi-postinstall rolldown 1.2.14 check"
   },
   "devDependencies": {
     "napi-postinstall": "../../..",
-    "rollup": "^4.40.0"
+    "rolldown": "^1.2.14"
   }
 }

@@ -1,6 +1,6 @@
 const { checkAndPreparePackage } = require('napi-postinstall')
 
-checkAndPreparePackage('rollup', '4.40.0', true).catch(() => {
-  console.error('Failed to install rollup v4.40.0')
+checkAndPreparePackage('rolldown', '1.2.14', true).catch(() => {
+  console.error('Failed to install rolldown v1.2.14')
   process.exitCode = 1
 })
