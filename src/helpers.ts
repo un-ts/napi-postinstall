@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process'
-import * as fs from 'node:fs'
-import * as path from 'node:path'
+import fs from 'node:fs'
+import path from 'node:path'
 
 import { DEFAULT_NPM_REGISTRY, LOG_PREFIX } from './constants.js'
 import { parseTriple } from './target.js'

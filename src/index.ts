@@ -1,11 +1,11 @@
 // based on https://github.com/evanw/esbuild/blob/4475787eef4c4923b92b9fa37ebba1c88b9e1d9b/lib/npm/node-install.ts
 
 import { execSync } from 'node:child_process'
-import * as fs from 'node:fs'
-import * as http from 'node:http'
-import * as https from 'node:https'
-import * as path from 'node:path'
-import * as zlib from 'node:zlib'
+import fs from 'node:fs'
+import http from 'node:http'
+import https from 'node:https'
+import path from 'node:path'
+import zlib from 'node:zlib'
 
 import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
 import {

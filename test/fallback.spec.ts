@@ -1,7 +1,7 @@
-import * as fs from 'node:fs'
+import fs from 'node:fs'
 import { createRequire } from 'node:module'
-import * as os from 'node:os'
-import * as path from 'node:path'
+import os from 'node:os'
+import path from 'node:path'
 
 import fallback from 'napi-postinstall/fallback'
 import unrsResolver from 'unrs-resolver'
