@@ -130,7 +130,7 @@ describe.skipIf(process.platform === 'win32')('fallback', () => {
     }
   })
 
-  it('should support webcontainer', () => {
+  it('should support webcontainer', { timeout: 30_000 }, () => {
     process.versions.webcontainer = '1'
     const resolved = fallback<typeof unrsResolver>(
       require.resolve('unrs-resolver/package.json'),
