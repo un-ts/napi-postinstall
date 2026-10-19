@@ -64,11 +64,12 @@ function fallback<T = unknown>(
 
     // napi keeps the WASI fallback out of `optionalDependencies` when it is not
     // the only target, so also accept the configured `napi.targets`.
-    const hasWasiTarget = napi.targets?.some(
-      target => parseTriple(target).platformArchABI === WASM32_WASI,
-    )
-
-    if (!optionalDependencies?.[bindingPkgName] && !hasWasiTarget) {
+    if (
+      !optionalDependencies?.[bindingPkgName] &&
+      !napi.targets?.some(
+        target => parseTriple(target).platformArchABI === WASM32_WASI,
+      )
+    ) {
       throw new Error(
         errorMessage(
           `\`${WASM32_WASI}\` target is unavailable for \`${name}\` v${version}`,
