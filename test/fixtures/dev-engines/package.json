@@ -9,10 +9,10 @@
     }
   },
   "scripts": {
-    "postinstall": "napi-postinstall rollup 4.40.0 check"
+    "postinstall": "napi-postinstall rolldown 1.2.14 check"
   },
   "devDependencies": {
-    "napi-postinstall": "file:../../..",
-    "rollup": "^4.40.0"
+    "napi-postinstall": "link:../../..",
+    "rolldown": "^1.2.14"
   }
 }

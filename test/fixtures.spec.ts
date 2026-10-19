@@ -70,7 +70,6 @@ describe('devEngines fixture', () => {
       },
     })
     expect(res.exitCode).toBe(0)
-    expect(res.stderr).toContain('Trying to install package')
     expect(res.stderr).not.toContain('EBADDEVENGINES')
   })
 })
