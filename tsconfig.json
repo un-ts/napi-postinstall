@@ -1,15 +1,15 @@
 {
-  "extends": "@1stg/tsconfig/node",
+  "extends": "@1stg/tsconfig/node16",
   "compilerOptions": {
+    "importHelpers": false,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "Preserve",
-    "moduleResolution": "Bundler",
     "rootDir": ".",
     "types": ["node", "web"],
     "paths": {
       "napi-postinstall": ["./src/index.ts"],
       "napi-postinstall/fallback": ["./src/fallback.ts"]
     },
-    "target": "ES2020"
+    "target": "ES2020",
+    "verbatimModuleSyntax": false
   }
 }
