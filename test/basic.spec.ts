@@ -5,7 +5,11 @@ import path from 'node:path'
 import { checkAndPreparePackage } from 'napi-postinstall'
 import type { PackageJson } from 'napi-postinstall'
 
-import { copyNpmrcTo, hasWasiTarget } from '../src/helpers.js'
+import {
+  copyNpmrcTo,
+  getGlobalNpmRegistry,
+  hasWasiTarget,
+} from '../src/helpers.js'
 
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
@@ -83,6 +87,7 @@ describe('napi-postinstall', () => {
       expect(fs.readFileSync(path.join(installDir, '.npmrc'), 'utf8')).toBe(
         content,
       )
+      expect(getGlobalNpmRegistry(root)).toBe('https://registry.example.test/')
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }

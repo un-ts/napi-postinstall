@@ -6,9 +6,16 @@ import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, WASM32_WASI } from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
-export function getGlobalNpmRegistry() {
+function getProjectDir() {
+  return (
+    process.env.npm_config_local_prefix || process.env.INIT_CWD || process.cwd()
+  )
+}
+
+export function getGlobalNpmRegistry(cwd = getProjectDir()) {
   try {
     const registry = execSync('npm config get registry', {
+      cwd,
       encoding: 'utf8',
     }).trim()
     return registry.endsWith('/') ? registry : `${registry}/`
@@ -17,13 +24,8 @@ export function getGlobalNpmRegistry() {
   }
 }
 
-export function copyNpmrcTo(dir: string, cwd?: string) {
-  const sourceDir =
-    cwd ||
-    process.env.npm_config_local_prefix ||
-    process.env.INIT_CWD ||
-    process.cwd()
-  const npmrc = path.join(sourceDir, '.npmrc')
+export function copyNpmrcTo(dir: string, cwd = getProjectDir()) {
+  const npmrc = path.join(cwd, '.npmrc')
   if (fs.existsSync(npmrc)) {
     fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
   }
