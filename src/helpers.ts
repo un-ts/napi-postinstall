@@ -13,6 +13,8 @@ import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
 function getProjectDir() {
+  // Dependency lifecycle scripts run with cwd set to the package directory; npm
+  // exposes the project root through these variables.
   return (
     process.env.npm_config_local_prefix || process.env.INIT_CWD || process.cwd()
   )
