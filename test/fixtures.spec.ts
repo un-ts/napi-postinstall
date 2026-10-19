@@ -1,6 +1,11 @@
 import path = require('node:path')
 
-import { exec } from 'tinyexec'
+import type { exec as execType } from 'tinyexec' with { 'resolution-mode': 'import' }
+
+const exec = async (...args: Parameters<typeof execType>) => {
+  const { exec: run } = await import('tinyexec')
+  return run(...args)
+}
 
 vi.setConfig({ testTimeout: 5 * 60_000 })
 
