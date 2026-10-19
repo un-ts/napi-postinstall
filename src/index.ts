@@ -132,8 +132,12 @@ function installUsingNPM(
     // command instead of a HTTP request so that it hopefully works in situations
     // where HTTP requests are blocked but the "npm" command still works due to,
     // for example, a custom configured npm registry and special firewall rules.
+    //
+    // Use the temporary directory as the prefix so npm reads its empty
+    // package.json instead of the caller's one. Otherwise npm 11 can fail with
+    // EBADDEVENGINES when the caller declares another devEngines.packageManager.
     execSync(
-      `npm install --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix . --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
       { cwd: installDir, stdio: 'pipe', env },
