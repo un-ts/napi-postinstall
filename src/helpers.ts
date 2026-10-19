@@ -17,6 +17,27 @@ export function getGlobalNpmRegistry() {
   }
 }
 
+export function findNpmrc(
+  start = process.env.npm_config_local_prefix || process.cwd(),
+) {
+  const dir = path.resolve(start)
+  const npmrc = path.join(dir, '.npmrc')
+  if (fs.existsSync(npmrc)) {
+    return npmrc
+  }
+  const parent = path.dirname(dir)
+  if (parent !== dir) {
+    return findNpmrc(parent)
+  }
+}
+
+export function copyNpmrcTo(dir: string, start?: string) {
+  const npmrc = findNpmrc(start)
+  if (npmrc) {
+    fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
+  }
+}
+
 export function removeRecursive(dir: string) {
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)

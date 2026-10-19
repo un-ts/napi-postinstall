@@ -9,6 +9,7 @@ import zlib from 'node:zlib'
 
 import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
 import {
+  copyNpmrcTo,
   downloadedNodePath,
   errorLog,
   errorMessage,
@@ -127,6 +128,11 @@ function installUsingNPM(
     const packageJsonPath = path.join(installDir, PACKAGE_JSON)
 
     fs.writeFileSync(packageJsonPath, '{}')
+
+    // The temporary directory has its own package.json, so npm treats it as the
+    // project root. Copy the caller's .npmrc there to keep its registry, auth
+    // token and other settings visible to the nested install.
+    copyNpmrcTo(installDir)
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"

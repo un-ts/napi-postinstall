@@ -1,7 +1,15 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
 import { checkAndPreparePackage } from 'napi-postinstall'
 import type { PackageJson } from 'napi-postinstall'
 
-import { hasWasiTarget } from '../src/helpers.js'
+import {
+  copyNpmrcTo,
+  findNpmrc,
+  hasWasiTarget,
+} from '../src/helpers.js'
 
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
@@ -65,4 +73,24 @@ describe('napi-postinstall', () => {
       }
     },
   )
+
+  it('should copy the project npmrc into the temporary directory', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+    try {
+      const installDir = path.join(root, 'node_modules', 'host', 'npm-install')
+      fs.mkdirSync(installDir, { recursive: true })
+      const content = 'registry=https://registry.example.test/\n'
+      fs.writeFileSync(path.join(root, '.npmrc'), content)
+
+      expect(findNpmrc(installDir)).toBe(path.join(root, '.npmrc'))
+
+      copyNpmrcTo(installDir, installDir)
+
+      expect(fs.readFileSync(path.join(installDir, '.npmrc'), 'utf8')).toBe(
+        content,
+      )
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
 })
