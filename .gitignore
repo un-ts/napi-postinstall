@@ -1,6 +1,5 @@
 .*cache
 .type-coverage
-.vercel
 .yarn/*
 !.yarn/plugins
 !.yarn/releases
