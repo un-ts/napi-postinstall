@@ -2,7 +2,6 @@
   "extends": "@1stg/tsconfig/node16",
   "compilerOptions": {
     "importHelpers": false,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "rootDir": ".",
     "types": ["node", "web"],
     "paths": {

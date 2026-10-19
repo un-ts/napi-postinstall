@@ -97,7 +97,6 @@
     "yarn-berry-deduplicate": "^7.0.0"
   },
   "resolutions": {
-    "eslint-plugin-jsdoc": "^65.0.0",
     "napi-postinstall": "workspace:*",
     "prettier": "^3.6.2"
   },
