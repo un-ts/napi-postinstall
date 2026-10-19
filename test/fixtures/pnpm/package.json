@@ -1,5 +1,5 @@
 {
-  "name": "napi-postinstall-yarn",
+  "name": "napi-postinstall-pnpm",
   "private": true,
   "packageManager": "pnpm@10.9.0",
   "scripts": {
