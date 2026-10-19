@@ -5,6 +5,7 @@ import * as path from 'node:path'
 
 import { WASM32_WASI } from './constants.js'
 import { errorMessage, getNapiInfoFromPackageJson } from './helpers.js'
+import { parseTriple } from './target.js'
 import type { PackageJson } from './types.js'
 
 const EXECUTORS = {
@@ -61,7 +62,14 @@ function fallback<T = unknown>(
   if (process.versions.webcontainer) {
     const bindingPkgName = `${napi.packageName}-${WASM32_WASI}`
 
-    if (!optionalDependencies?.[bindingPkgName]) {
+    // napi keeps the WASI fallback out of `optionalDependencies` when it is not
+    // the only target, so also accept the configured `napi.targets`.
+    if (
+      !optionalDependencies?.[bindingPkgName] &&
+      !napi.targets?.some(
+        target => parseTriple(target).platformArchABI === WASM32_WASI,
+      )
+    ) {
       throw new Error(
         errorMessage(
           `\`${WASM32_WASI}\` target is unavailable for \`${name}\` v${version}`,
