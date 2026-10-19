@@ -61,7 +61,13 @@ function fallback<T = unknown>(
   if (process.versions.webcontainer) {
     const bindingPkgName = `${napi.packageName}-${WASM32_WASI}`
 
-    if (!optionalDependencies?.[bindingPkgName]) {
+    // napi keeps the WASI fallback out of `optionalDependencies` when it is not
+    // the only target, so also accept the configured `napi.targets`.
+    const hasWasiTarget = napi.targets?.some(target =>
+      target.startsWith(WASM32_WASI),
+    )
+
+    if (!optionalDependencies?.[bindingPkgName] && !hasWasiTarget) {
       throw new Error(
         errorMessage(
           `\`${WASM32_WASI}\` target is unavailable for \`${name}\` v${version}`,
