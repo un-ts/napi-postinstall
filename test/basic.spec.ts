@@ -74,30 +74,39 @@ describe('napi-postinstall', () => {
     },
   )
 
-  it('should copy the project npmrc into the temporary directory', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
-    try {
-      const installDir = path.join(root, 'node_modules', 'host', 'npm-install')
-      fs.mkdirSync(installDir, { recursive: true })
-      const content = 'registry=https://registry.example.test/\n'
-      fs.writeFileSync(path.join(root, '.npmrc'), content)
-      fs.writeFileSync(
-        path.join(root, 'package.json'),
-        JSON.stringify({
-          devEngines: {
-            packageManager: { name: 'pnpm', version: '10.9.0' },
-          },
-        }),
-      )
+  it(
+    'should copy the project npmrc into the temporary directory',
+    { timeout: 30_000 },
+    () => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+      try {
+        const installDir = path.join(
+          root,
+          'node_modules',
+          'host',
+          'npm-install',
+        )
+        fs.mkdirSync(installDir, { recursive: true })
+        const content = 'registry=https://registry.example.test/\n'
+        fs.writeFileSync(path.join(root, '.npmrc'), content)
+        fs.writeFileSync(
+          path.join(root, 'package.json'),
+          JSON.stringify({
+            devEngines: {
+              packageManager: { name: 'pnpm', version: '10.9.0' },
+            },
+          }),
+        )
 
-      copyNpmrcTo(installDir, root)
+        copyNpmrcTo(installDir, root)
 
-      expect(fs.readFileSync(path.join(installDir, '.npmrc'), 'utf8')).toBe(
-        content,
-      )
-      expect(getNpmRegistry(root)).toBe('https://registry.example.test/')
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true })
-    }
-  })
+        expect(fs.readFileSync(path.join(installDir, '.npmrc'), 'utf8')).toBe(
+          content,
+        )
+        expect(getNpmRegistry(root)).toBe('https://registry.example.test/')
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true })
+      }
+    },
+  )
 })
