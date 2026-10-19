@@ -44,12 +44,11 @@ jobs:
         run: yarn build
 
       - name: Create Release Pull Request or Publish to npm
-        uses: changesets/action@v1
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          commit: 'chore: release napi-postinstall'
-          title: 'chore: release napi-postinstall'
-          publish: yarn release
-          version: yarn run version
+          commit-message: 'chore: release napi-postinstall'
+          pr-title: 'chore: release napi-postinstall'
+          publish-script: yarn release
+          version-script: yarn run version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SKIP_SIMPLE_GIT_HOOKS: 1
