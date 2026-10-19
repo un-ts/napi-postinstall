@@ -1,4 +1,5 @@
 import { checkAndPreparePackage } from 'napi-postinstall'
+import type { PackageJson } from 'napi-postinstall'
 
 import { hasWasiTarget } from '../src/helpers.js'
 
@@ -29,4 +30,39 @@ describe('napi-postinstall', () => {
     expect(hasWasiTarget(['x86_64-unknown-linux-gnu'])).toBe(false)
     expect(hasWasiTarget()).toBeUndefined()
   })
+
+  it(
+    'should process a WASI target without optionalDependencies',
+    { timeout: 30_000 },
+    async () => {
+      const packageJson: PackageJson = {
+        name: 'fake-wasi-package',
+        version: '1.0.0',
+        napi: {
+          binaryName: 'fake',
+          packageName: '@fake/binding',
+          targets: ['wasm32-wasip1-threads'],
+        },
+      }
+      const previousRegistry = process.env.npm_config_registry
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(vi.fn())
+
+      process.env.npm_config_registry = 'http://127.0.0.1:1/'
+
+      try {
+        await expect(
+          checkAndPreparePackage(packageJson, false),
+        ).rejects.toThrow('Failed to install package')
+      } finally {
+        consoleError.mockRestore()
+        if (previousRegistry === undefined) {
+          delete process.env.npm_config_registry
+        } else {
+          process.env.npm_config_registry = previousRegistry
+        }
+      }
+    },
+  )
 })
