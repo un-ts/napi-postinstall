@@ -1,13 +1,14 @@
 {
-  "extends": "@1stg/tsconfig/node",
+  "extends": "@1stg/tsconfig/node16",
   "compilerOptions": {
-    "allowSyntheticDefaultImports": false,
-    "esModuleInterop": false,
+    "importHelpers": false,
     "rootDir": ".",
+    "types": ["node", "web"],
     "paths": {
       "napi-postinstall": ["./src/index.ts"],
       "napi-postinstall/fallback": ["./src/fallback.ts"]
     },
-    "target": "ES2020"
+    "target": "ES2020",
+    "verbatimModuleSyntax": false
   }
 }

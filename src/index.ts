@@ -1,11 +1,11 @@
 // based on https://github.com/evanw/esbuild/blob/4475787eef4c4923b92b9fa37ebba1c88b9e1d9b/lib/npm/node-install.ts
 
 import { execSync } from 'node:child_process'
-import * as fs from 'node:fs'
-import * as http from 'node:http'
-import * as https from 'node:https'
-import * as path from 'node:path'
-import * as zlib from 'node:zlib'
+import fs from 'node:fs'
+import http from 'node:http'
+import https from 'node:https'
+import path from 'node:path'
+import zlib from 'node:zlib'
 
 import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
 import {
@@ -54,10 +54,11 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
   } catch (err) {
     throw new Error(
       errorMessage(`Invalid gzip data in archive`, getErrorMessage(err)),
+      { cause: err },
     )
   }
   const str = (i: number, n: number) =>
-    // eslint-disable-next-line sonarjs/slow-regex
+    // eslint-disable-next-line sonarjs/super-linear-regex
     String.fromCodePoint(...buffer.subarray(i, i + n)).replace(/\0.*$/, '')
   let offset = 0
   subpath = `package/${subpath}`
@@ -131,7 +132,6 @@ function installUsingNPM(
     // command instead of a HTTP request so that it hopefully works in situations
     // where HTTP requests are blocked but the "npm" command still works due to,
     // for example, a custom configured npm registry and special firewall rules.
-    // eslint-disable-next-line sonarjs/os-command
     execSync(
       `npm install --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
@@ -339,7 +339,6 @@ export async function checkAndPreparePackage(
       if (isPnp()) {
         if (isWasm32Wasi) {
           try {
-            // eslint-disable-next-line sonarjs/os-command
             execSync(`yarn add -D ${pkg}@${version}`)
           } catch (err) {
             errorLog(
@@ -406,6 +405,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
               `Failed to install package "${pkg}"`,
               getErrorMessage(err),
             ),
+            { cause: err },
           )
         }
       }

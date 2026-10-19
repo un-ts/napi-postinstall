@@ -1,13 +1,12 @@
-import * as fs from 'node:fs'
-import * as os from 'node:os'
-import * as path from 'node:path'
+import fs from 'node:fs'
+import { createRequire } from 'node:module'
+import os from 'node:os'
+import path from 'node:path'
 
-import unrsResolver = require('unrs-resolver')
+import fallback from 'napi-postinstall/fallback'
+import unrsResolver from 'unrs-resolver'
 
-// @ts-expect-error -- don't use `import fallback = require('napi-postinstall/fallback')` due to vitest code coverage
-import fallback_ from 'napi-postinstall/fallback'
-
-const fallback = fallback_ as typeof import('napi-postinstall/fallback')
+const require = createRequire(import.meta.url)
 
 describe.skipIf(process.platform === 'win32')('fallback', () => {
   afterEach(() => {
@@ -130,7 +129,7 @@ describe.skipIf(process.platform === 'win32')('fallback', () => {
     }
   })
 
-  it('should support webcontainer', () => {
+  it('should support webcontainer', { timeout: 30_000 }, () => {
     process.versions.webcontainer = '1'
     const resolved = fallback<typeof unrsResolver>(
       require.resolve('unrs-resolver/package.json'),

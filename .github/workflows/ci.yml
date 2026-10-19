@@ -1,12 +1,19 @@
 name: CI
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request: {}
+  merge_group: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   ci:
@@ -14,10 +21,9 @@ jobs:
     strategy:
       matrix:
         node:
-          - 18
-          - 20
           - 22
           - 24
+          - 26
         os:
           - macos-latest
           - windows-latest
@@ -26,24 +32,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node.js ${{ matrix.node }}
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node }}
           cache: yarn
 
-      # Node.js 18's Corepack cannot run pnpm 12, so use pnpm 10 there only.
-      - name: Install pnpm 10 on Node.js 18
-        if: matrix.node == 18
-        run: |
-          npm i -g pnpm@10.9.0
-          corepack enable yarn
-
-      # Newer Node.js versions keep the latest pnpm through Corepack.
       - name: Enable Corepack
-        if: matrix.node != 18
         run: |
           corepack enable npm
           corepack enable
@@ -67,9 +64,9 @@ jobs:
       - name: Codecov
         # bad Windows -- https://github.com/codecov/codecov-action/issues/1787
         if: ${{ !github.event.pull_request.head.repo.fork && matrix.os != 'windows-latest' }}
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
       - name: Run codacy-coverage-reporter
         # bad Windows -- https://github.com/codacy/codacy-coverage-reporter-action/issues/91

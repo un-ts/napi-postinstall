@@ -1,10 +1,10 @@
-import path = require('node:path')
+import path from 'node:path'
 
 import { exec } from 'tinyexec'
 
 vi.setConfig({ testTimeout: 5 * 60_000 })
 
-const fixtures = path.resolve(__dirname, 'fixtures')
+const fixtures = path.resolve(import.meta.dirname, 'fixtures')
 
 const removeUnrelatedWarnings = (stderr: string) =>
   stderr

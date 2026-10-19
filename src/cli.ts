@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import * as fs from 'node:fs'
+import fs from 'node:fs'
 
 import { PACKAGE_JSON } from './constants'
 
