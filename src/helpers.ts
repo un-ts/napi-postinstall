@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { DEFAULT_NPM_REGISTRY, LOG_PREFIX } from './constants.js'
+import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, WASM32_WASI } from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
@@ -296,6 +296,12 @@ export function getNapiNativeTargets() {
     return [...targets, WASI_TARGET]
   }
   return [targets, WASI_TARGET]
+}
+
+export function hasWasiTarget(targets?: string[]) {
+  return targets?.some(
+    target => parseTriple(target).platformArchABI === WASM32_WASI,
+  )
 }
 
 export function getErrorMessage(err: unknown) {
