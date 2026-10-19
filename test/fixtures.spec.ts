@@ -1,6 +1,8 @@
 import path = require('node:path')
 
-import type { exec as execType } from 'tinyexec' with { 'resolution-mode': 'import' }
+import type { exec as execType } from 'tinyexec' with {
+  'resolution-mode': 'import',
+}
 
 const exec = async (...args: Parameters<typeof execType>) => {
   const { exec: run } = await import('tinyexec')
