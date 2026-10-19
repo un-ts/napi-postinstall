@@ -35,15 +35,21 @@ jobs:
           cache: yarn
 
       # Node.js 18's Corepack cannot run pnpm 12, so use pnpm 10 there only.
+      - name: Install pnpm 10 on Node.js 18
+        if: matrix.node == 18
+        run: |
+          npm i -g pnpm@10.9.0
+          corepack enable yarn
+
       # Newer Node.js versions keep the latest pnpm through Corepack.
-      - name: Install Dependencies
+      - name: Enable Corepack
+        if: matrix.node != 18
         run: |
           corepack enable npm
           corepack enable
-          if [ "${{ matrix.node }}" = "18" ]; then
-            npm i -g pnpm@10.9.0 --force
-          fi
-          yarn --immutable
+
+      - name: Install Dependencies
+        run: yarn --immutable
 
       - name: Build
         run: |
