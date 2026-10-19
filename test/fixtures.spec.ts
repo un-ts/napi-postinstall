@@ -1,17 +1,10 @@
-import path = require('node:path')
+import path from 'node:path'
 
-import type { exec as execType } from 'tinyexec' with {
-  'resolution-mode': 'import',
-}
-
-const exec = async (...args: Parameters<typeof execType>) => {
-  const { exec: run } = await import('tinyexec')
-  return run(...args)
-}
+import { exec } from 'tinyexec'
 
 vi.setConfig({ testTimeout: 5 * 60_000 })
 
-const fixtures = path.resolve(__dirname, 'fixtures')
+const fixtures = path.resolve(import.meta.dirname, 'fixtures')
 
 const removeUnrelatedWarnings = (stderr: string) =>
   stderr

@@ -1,10 +1,12 @@
 import * as fs from 'node:fs'
+import { createRequire } from 'node:module'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
+import fallback from 'napi-postinstall/fallback'
 import unrsResolver from 'unrs-resolver'
 
-import fallback from 'napi-postinstall/fallback'
+const require = createRequire(import.meta.url)
 
 describe.skipIf(process.platform === 'win32')('fallback', () => {
   afterEach(() => {
