@@ -2,12 +2,9 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import unrsResolver = require('unrs-resolver')
+import unrsResolver from 'unrs-resolver'
 
-// don't use `import fallback = require('napi-postinstall/fallback')` due to vitest code coverage
-import fallback_ from 'napi-postinstall/fallback'
-
-const fallback = fallback_
+import fallback from 'napi-postinstall/fallback'
 
 describe.skipIf(process.platform === 'win32')('fallback', () => {
   afterEach(() => {
