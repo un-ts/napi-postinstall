@@ -59,6 +59,22 @@ describe('pnpm fixture', () => {
   })
 })
 
+describe('devEngines fixture', () => {
+  it('should install without EBADDEVENGINES', async () => {
+    const res = await exec('pnpm', ['install', '--no-optional'], {
+      nodeOptions: {
+        cwd: path.resolve(fixtures, 'dev-engines'),
+        env: {
+          NODE_OPTIONS: '--no-deprecation',
+        },
+      },
+    })
+    expect(res.exitCode).toBe(0)
+    expect(res.stderr).toContain('Trying to install package')
+    expect(res.stderr).not.toContain('EBADDEVENGINES')
+  })
+})
+
 describe('yarn fixture', () => {
   it('should just work', async () => {
     const res = await exec('yarn', [], {
