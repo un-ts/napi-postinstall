@@ -7,6 +7,6 @@
   },
   "devDependencies": {
     "napi-postinstall": "portal:../../..",
-    "rollup": "^4.40.0"
+    "rolldown": "^1.2.14"
   }
 }

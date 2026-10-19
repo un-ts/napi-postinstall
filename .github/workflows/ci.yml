@@ -51,7 +51,7 @@ jobs:
       - name: Build
         run: |
           yarn build
-          yarn napi-postinstall rollup
+          yarn napi-postinstall rolldown
           yarn napi-postinstall unrs-resolver check
 
       - name: Lint and Test

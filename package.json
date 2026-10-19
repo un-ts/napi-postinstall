@@ -91,7 +91,7 @@
     "tinyexec": "^1.0.1",
     "type-coverage": "^2.29.7",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vite": "^7.0.0",
+    "vite": "^8.0.0",
     "vite-tsconfig-paths": "^6.0.0",
     "vitest": "^5.0.5",
     "yarn-berry-deduplicate": "^7.0.0"

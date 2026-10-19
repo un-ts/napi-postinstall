@@ -3,9 +3,9 @@ import { checkAndPreparePackage } from 'napi-postinstall'
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
     await expect(
-      checkAndPreparePackage('rollup', undefined, true),
+      checkAndPreparePackage('rolldown', undefined, true),
     ).resolves.not.toThrow()
-    await expect(checkAndPreparePackage('rollup')).resolves.not.toThrow()
+    await expect(checkAndPreparePackage('rolldown')).resolves.not.toThrow()
 
     await expect(
       checkAndPreparePackage('@swc/core', undefined, true),
