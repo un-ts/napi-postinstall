@@ -6,18 +6,12 @@ import { PACKAGE_JSON } from './constants'
 
 import { checkAndPreparePackage, PackageJson } from './index.js'
 
-function readCwdPackage(
-  packageName: string,
-  packageVersion: string,
-): PackageJson | undefined {
+function readCwdPackage(packageName: string): PackageJson | undefined {
   try {
     const packageJson = JSON.parse(
       fs.readFileSync(PACKAGE_JSON, 'utf8'),
     ) as PackageJson
-    if (
-      packageJson.name === packageName &&
-      packageJson.version === packageVersion
-    ) {
+    if (packageJson.name === packageName) {
       return packageJson
     }
   } catch {}
@@ -27,11 +21,7 @@ const packageName = process.argv[2]
 const packageVersion = process.argv[3]
 const checkVersion = ['1', 'check', 'true', 'yes'].includes(process.argv[4])
 
-const packageJsonPath = process.argv[5]
-
-const packageJson = packageJsonPath
-  ? (require(packageJsonPath) as PackageJson)
-  : readCwdPackage(packageName, packageVersion)
+const packageJson = readCwdPackage(packageName)
 
 const promise = packageJson
   ? checkAndPreparePackage(packageJson, checkVersion)

@@ -87,7 +87,7 @@ function fallback<T = unknown>(
 
   execFileSync(
     process.execPath,
-    [cliPath, name, version, checkVersion ? '1' : '0', packageJsonPath],
+    [cliPath, name, version, checkVersion ? '1' : '0'],
     {
       cwd: pkgDir,
       stdio: 'inherit',
