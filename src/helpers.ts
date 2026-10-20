@@ -25,8 +25,17 @@ function readWorkspaces(dir: string) {
   try {
     const { workspaces } = JSON.parse(
       fs.readFileSync(path.join(dir, PACKAGE_JSON), 'utf8'),
-    ) as { workspaces?: unknown }
-    return Array.isArray(workspaces) ? (workspaces as string[]) : []
+    ) as { workspaces?: string[] | { packages?: string[] } }
+    // `workspaces` is either the array shorthand or the object form yarn v1
+    // introduced, where only `packages` holds the patterns
+    const patterns = Array.isArray(workspaces)
+      ? workspaces
+      : workspaces?.packages
+    return Array.isArray(patterns)
+      ? patterns.filter(
+          (pattern): pattern is string => typeof pattern === 'string',
+        )
+      : []
   } catch {
     return []
   }
@@ -49,13 +58,24 @@ function isWorkspaceMember(root: string, dir: string) {
     return fs.existsSync(path.join(root, PNPM_WORKSPACE))
   }
   const relative = path.relative(root, dir).split(path.sep).join('/')
+  if (!relative || relative === '..' || relative.startsWith('../')) {
+    return false
+  }
   return workspaces.some(pattern => {
     if (!pattern || pattern.startsWith('!')) {
       return false
     }
-    let prefix = pattern.split('*')[0]
+    let normalized = pattern
+    while (normalized.startsWith('./')) {
+      normalized = normalized.slice(2)
+    }
+    let prefix = normalized.split('*')[0]
     while (prefix.endsWith('/')) {
       prefix = prefix.slice(0, -1)
+    }
+    if (!prefix) {
+      // a bare `*` only claims the direct children of the workspace root
+      return !relative.includes('/')
     }
     return relative === prefix || relative.startsWith(`${prefix}/`)
   })

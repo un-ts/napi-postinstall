@@ -86,6 +86,46 @@ describe('getProjectDir', () => {
   // npm keeps a standalone project's own config even when an unrelated
   // directory above it happens to declare workspaces, and warns instead when a
   // real member has its own `.npmrc`.
+  // yarn v1 introduced the object form; only `packages` holds patterns
+  it('should understand the object form of workspaces', () => {
+    write(
+      path.join(root, PACKAGE_JSON),
+      JSON.stringify({
+        name: 'root',
+        version: '1.0.0',
+        workspaces: {
+          packages: ['./packages/*'],
+          nohoist: ['**/react-native'],
+        },
+      }),
+    )
+    write(
+      path.join(root, 'packages', 'a', PACKAGE_JSON),
+      JSON.stringify({ name: 'a', version: '1.0.0' }),
+    )
+    write(
+      path.join(root, 'tools', 'app', PACKAGE_JSON),
+      JSON.stringify({ name: 'app', version: '1.0.0' }),
+    )
+
+    expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
+    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
+      path.join(root, 'tools', 'app'),
+    )
+  })
+
+  it('should only claim direct children for a bare wildcard', () => {
+    write(
+      path.join(root, PACKAGE_JSON),
+      JSON.stringify({ name: 'root', version: '1.0.0', workspaces: ['*'] }),
+    )
+
+    expect(getProjectDir(path.join(root, 'app'))).toBe(root)
+    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
+      path.join(root, 'tools', 'app'),
+    )
+  })
+
   it('should not adopt a parent workspace the project is not a member of', () => {
     write(
       path.join(root, PACKAGE_JSON),

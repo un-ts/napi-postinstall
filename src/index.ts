@@ -58,32 +58,29 @@ function fetch(url: string) {
 }
 
 /**
- * Reads a manifest from the configured registry, retrying the public one.
+ * Reads a manifest from the configured registry.
  *
  * These requests carry no credentials, so an authenticated registry rejects
- * them, and this lookup used to read the public registry before the project
- * `.npmrc` was honoured. It only reads metadata -- nothing is installed from the
- * fallback -- while the tarball download below always sticks to the registry the
- * project configured, so a private package can never be resolved to a public
- * one.
+ * them. Falling back to the public registry would let a public manifest decide
+ * which package and version the nested install then looks up in the configured
+ * registry, so the failure is surfaced here instead: a private package must
+ * never be resolved to a public one.
  */
 async function fetchPackageJson(
   pkg: string,
   version: string,
   registry: string,
 ) {
-  const pathname = `${pkg}/${version}`
   try {
-    return await fetch(`${registry}${pathname}`)
+    return await fetch(`${registry}${pkg}/${version}`)
   } catch (error) {
-    if (registry === DEFAULT_NPM_REGISTRY) {
-      throw error
+    if (registry !== DEFAULT_NPM_REGISTRY) {
+      errorLog(
+        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(registry)}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
+        getErrorMessage(error),
+      )
     }
-    errorLog(
-      `Failed to fetch ${JSON.stringify(pathname)} from ${JSON.stringify(registry)}, retrying the public registry`,
-      getErrorMessage(error),
-    )
-    return fetch(`${DEFAULT_NPM_REGISTRY}${pathname}`)
+    throw error
   }
 }
 
