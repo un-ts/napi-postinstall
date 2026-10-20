@@ -37,8 +37,8 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-async function loadCli() {
-  await import('napi-postinstall/cli')
+function loadCli() {
+  return import('napi-postinstall/cli')
 }
 
 describe('cli', () => {
