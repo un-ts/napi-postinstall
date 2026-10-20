@@ -342,7 +342,9 @@ export async function checkAndPreparePackage(
 ) {
   let packageJson: PackageJson
   let npmRegistry: string | undefined
-  const getRegistry = () => (npmRegistry ??= getNpmRegistry())
+  // memoised per check: the registry depends on the package scope, which never
+  // changes within one call
+  const getRegistry = (pkg: string) => (npmRegistry ??= getNpmRegistry(pkg))
 
   if (typeof packageNameOrPackageJson === 'string') {
     try {
@@ -360,7 +362,7 @@ export async function checkAndPreparePackage(
       }
       const pkg = packageNameOrPackageJson
       const packageJsonBuffer = await fetchPackageJson(
-        getRegistry(),
+        getRegistry(pkg),
         pkg,
         versionOrCheckVersion,
       )
@@ -482,7 +484,7 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // package from the npm registry over HTTP as a last resort.
         try {
           await downloadDirectlyFromNPM(
-            getRegistry(),
+            getRegistry(pkg),
             pkg,
             version,
             subpath,

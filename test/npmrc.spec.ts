@@ -90,6 +90,14 @@ describe('getProjectDir', () => {
     )
   })
 
+  // `C:` is not a usable base for relative resolution, the root has to keep its
+  // separator
+  it('should return the filesystem root for a path that starts at node_modules', () => {
+    const start = path.resolve('/node_modules/pkg')
+
+    expect(getProjectDir(start)).toBe(path.parse(start).root)
+  })
+
   it('should fall back to the cwd outside node_modules', () => {
     const cwd = path.join(root, 'somewhere')
 
@@ -151,6 +159,8 @@ describe('prepareNpmPrefix', () => {
 
 describe('getNpmRegistry', () => {
   const execSync = vi.mocked(childProcess.execSync)
+  const config = (value: Record<string, string | undefined>) =>
+    execSync.mockReturnValue(JSON.stringify(value))
 
   beforeEach(() => {
     execSync.mockReset()
@@ -158,14 +168,33 @@ describe('getNpmRegistry', () => {
 
   it('should read the registry from the project npmrc', () => {
     write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm')
-    execSync.mockReturnValue('http://127.0.0.1:1/npm\n')
+    config({ registry: 'http://127.0.0.1:1/npm' })
 
     // npm omits the trailing slash, it has to be added back
-    expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
+    expect(getNpmRegistry(undefined, root)).toBe('http://127.0.0.1:1/npm/')
     expect(execSync).toHaveBeenCalledTimes(1)
   })
 
-  it('should fail instead of using the public registry when the project config is unreadable', () => {
+  it('should prefer the registry configured for the package scope', () => {
+    write(
+      path.join(root, NPMRC),
+      [
+        'registry=http://127.0.0.1:1/npm',
+        '@corp:registry=https://npm.corp.test/',
+      ].join('\n'),
+    )
+    config({
+      '@corp:registry': 'https://npm.corp.test/',
+      registry: 'http://127.0.0.1:1/npm',
+    })
+
+    expect(getNpmRegistry('@corp/binding-linux-x64-gnu', root)).toBe(
+      'https://npm.corp.test/',
+    )
+    expect(getNpmRegistry('rolldown', root)).toBe('http://127.0.0.1:1/npm/')
+  })
+
+  it('should fail instead of using the public registry when npm cannot be queried', () => {
     write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm/')
     execSync.mockImplementation(() => {
       throw new Error('spawn npm ENOENT')
@@ -173,9 +202,16 @@ describe('getNpmRegistry', () => {
 
     // falling back here would let the tarball download fetch from a registry the
     // project never configured
-    expect(() => getNpmRegistry(root)).toThrow(
+    expect(() => getNpmRegistry(undefined, root)).toThrow(
       'Failed to read the registry from',
     )
+  })
+
+  it('should fail when the project config exists but cannot be copied', () => {
+    fs.mkdirSync(path.join(root, NPMRC))
+    config({ registry: DEFAULT_NPM_REGISTRY })
+
+    expect(() => getNpmRegistry(undefined, root)).toThrow('Failed to read')
   })
 
   it('should fall back to the default registry without any project config', () => {
@@ -183,7 +219,7 @@ describe('getNpmRegistry', () => {
       throw new Error('spawn npm ENOENT')
     })
 
-    expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
+    expect(getNpmRegistry(undefined, root)).toBe(DEFAULT_NPM_REGISTRY)
   })
 })
 

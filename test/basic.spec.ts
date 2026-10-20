@@ -9,7 +9,7 @@ import { hasWasiTarget } from '../src/helpers.js'
 // runner, which is what made this test time out. Answer both with the same dead
 // registry instead, so nothing leaves the process.
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(() => 'http://127.0.0.1:1/'),
+  execSync: vi.fn(() => JSON.stringify({ registry: 'http://127.0.0.1:1/' })),
 }))
 
 describe('napi-postinstall', () => {

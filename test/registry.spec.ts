@@ -4,7 +4,9 @@ import { vi } from 'vitest'
 // the requests made by the JS API carry no credentials, so they must fail on the
 // configured registry rather than read the manifest from somewhere else
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(() => 'https://private.example/'),
+  execSync: vi.fn(() =>
+    JSON.stringify({ registry: 'https://private.example/' }),
+  ),
 }))
 
 interface MockResponse {
