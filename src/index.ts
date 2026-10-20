@@ -8,7 +8,6 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 
 import {
-  DEFAULT_NPM_REGISTRY,
   meta,
   NPM_PACKAGE_NAME,
   NPM_PINNED_VERSION,
@@ -85,12 +84,10 @@ async function fetchPackageJson(
   try {
     return await fetch(`${registry}${pkg}/${version}`)
   } catch (error) {
-    if (registry !== DEFAULT_NPM_REGISTRY) {
-      errorLog(
-        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redactCredentials(registry))}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
-        getErrorMessage(error),
-      )
-    }
+    errorLog(
+      `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redactCredentials(registry))}: this lookup cannot send credentials`,
+      getErrorMessage(error),
+    )
     throw error
   }
 }
