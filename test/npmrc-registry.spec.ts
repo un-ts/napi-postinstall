@@ -176,6 +176,7 @@ describe('project npmrc', () => {
           delete env.npm_config_registry
           Object.assign(env, {
             npm_config_cache: path.join(root, 'npm-cache'),
+            npm_config_update_notifier: 'false',
             // fail fast instead of retrying when the auth setup is wrong
             npm_config_fetch_retries: '0',
             npm_config_fetch_retry_maxtimeout: '100',

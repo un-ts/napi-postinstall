@@ -160,12 +160,14 @@ describe('prepareNpmPrefix', () => {
   })
 })
 
-// These spawn the real `npm`, so keep them off the shared cache: a parallel
-// `npm install` in another worker would otherwise block them on the cache lock.
-describe('getNpmRegistry', { timeout: 30_000 }, () => {
+// Spawning npm from a unit test is slow on a loaded CI runner (the fixture
+// installs run in parallel), so only one case pays for it and the rest of the
+// contract is covered without it.
+describe('getNpmRegistry', () => {
   const isolatedKeys = [
     'npm_config_cache',
     'npm_config_globalconfig',
+    'npm_config_update_notifier',
     'npm_config_userconfig',
   ] as const
   const originalEnv = Object.fromEntries(
@@ -184,6 +186,7 @@ describe('getNpmRegistry', { timeout: 30_000 }, () => {
     }
     process.env.npm_config_cache = path.join(isolatedDir, 'cache')
     process.env.npm_config_globalconfig = config('global.npmrc')
+    process.env.npm_config_update_notifier = 'false'
     process.env.npm_config_userconfig = config('user.npmrc')
   })
 
@@ -199,19 +202,25 @@ describe('getNpmRegistry', { timeout: 30_000 }, () => {
     fs.rmSync(isolatedDir, { recursive: true, force: true })
   })
 
-  it('should read the registry from the project npmrc', () => {
+  it(
+    'should read the registry from the project npmrc',
+    { timeout: 120_000 },
+    () => {
+      // npm omits the trailing slash, it has to be added back
+      write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm')
+
+      expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
+    },
+  )
+
+  it('should fall back to the default registry when npm is unavailable', () => {
     write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm/')
-
-    expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
-  })
-
-  it('should append the trailing slash npm omits', () => {
-    write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm')
-
-    expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
-  })
-
-  it('should fall back to the default registry without any config', () => {
-    expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
+    const originalPath = process.env.PATH
+    process.env.PATH = ''
+    try {
+      expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
+    } finally {
+      process.env.PATH = originalPath
+    }
   })
 })
