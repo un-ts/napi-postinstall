@@ -86,7 +86,7 @@ function createRegistry(
 describe('project npmrc', () => {
   it(
     'should install the binding from the registry configured in the project npmrc',
-    { timeout: 60_000 },
+    { timeout: 120_000 },
     async () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
       const project = path.join(root, 'project')

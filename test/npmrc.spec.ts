@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { afterAll, beforeAll } from 'vitest'
+
 import { DEFAULT_NPM_REGISTRY, NPMRC, PACKAGE_JSON } from '../src/constants.js'
 import {
   getNpmRegistry,
@@ -158,7 +160,45 @@ describe('prepareNpmPrefix', () => {
   })
 })
 
-describe('getNpmRegistry', () => {
+// These spawn the real `npm`, so keep them off the shared cache: a parallel
+// `npm install` in another worker would otherwise block them on the cache lock.
+describe('getNpmRegistry', { timeout: 30_000 }, () => {
+  const isolatedKeys = [
+    'npm_config_cache',
+    'npm_config_globalconfig',
+    'npm_config_userconfig',
+  ] as const
+  const originalEnv = Object.fromEntries(
+    isolatedKeys.map(key => [key, process.env[key]]),
+  )
+  let isolatedDir: string
+
+  beforeAll(() => {
+    isolatedDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'napi-postinstall-npm-'),
+    )
+    const config = (name: string) => {
+      const file = path.join(isolatedDir, name)
+      write(file, '')
+      return file
+    }
+    process.env.npm_config_cache = path.join(isolatedDir, 'cache')
+    process.env.npm_config_globalconfig = config('global.npmrc')
+    process.env.npm_config_userconfig = config('user.npmrc')
+  })
+
+  afterAll(() => {
+    for (const key of isolatedKeys) {
+      const value = originalEnv[key]
+      if (value === undefined) {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
+    fs.rmSync(isolatedDir, { recursive: true, force: true })
+  })
+
   it('should read the registry from the project npmrc', () => {
     write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm/')
 
@@ -172,20 +212,6 @@ describe('getNpmRegistry', () => {
   })
 
   it('should fall back to the default registry without any config', () => {
-    const userconfig = path.join(root, 'user.npmrc')
-    const globalconfig = path.join(root, 'global.npmrc')
-    write(userconfig, '')
-    write(globalconfig, '')
-    const env = process.env
-    process.env = {
-      ...env,
-      npm_config_globalconfig: globalconfig,
-      npm_config_userconfig: userconfig,
-    }
-    try {
-      expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
-    } finally {
-      process.env = env
-    }
+    expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
   })
 })
