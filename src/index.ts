@@ -35,20 +35,14 @@ export type * from './types.js'
 const REDIRECT_STATUS_CODES = new Set([301, 302, 307, 308])
 
 /**
- * The binding package name comes from the dependency's own `napi.packageName`
- * field, which npm never validates, and the version is a dependency range rather
- * than a published version, so neither is guaranteed to be shell-safe. The first
- * pattern is npm's package name grammar; the second keeps the characters a range
- * needs (`^`, `~`, `*`, `>=`, and the `:` of `workspace:`/`file:` specs) while
- * excluding quotes, `$`, backtick, `&`, `|`, `;`, brackets and `%`/`!` — which
- * also means a quoted argument cannot be escaped out of.
+ * Both values come from the dependency's own manifest, not from anything npm
+ * validated: the name from `napi.packageName`, the version from the matching
+ * `optionalDependencies` entry, which napi-rs pins to the published version. The
+ * patterns are npm's package name grammar and that pinned version, and neither
+ * can contain a shell metacharacter, so the command needs no quoting.
  */
 const NPM_PACKAGE_NAME = /^(?:@[\w.-]+\/)?[\w.-]+$/
-const NPM_VERSION_RANGE = /^[\w.+~^=*<>/ :-]+$/
-
-/** `NPM_VERSION_RANGE` rules out both quote characters, so this cannot break out. */
-const quoteShellArgument = (value: string) =>
-  process.platform === 'win32' ? `"${value}"` : `'${value}'`
+const NPM_PINNED_VERSION = /^[\w.+-]+$/
 
 function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {
@@ -170,7 +164,7 @@ function installUsingNPM(
   // inside `node_modules` also keeps it on the same filesystem as the packages it
   // moves into place.
   // both end up in the directory name and in the npm command
-  if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_VERSION_RANGE.test(version)) {
+  if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
     throw new Error(
       errorMessage(
         `Refusing to install an unsafe package`,
@@ -225,11 +219,10 @@ function installUsingNPM(
     // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
     // them pointing at the project rather than at the temporary prefix.
     //
-    const spec = quoteShellArgument(`${pkg}@${version}`)
     execSync(
       `npm install --prefix ${path.relative(projectDir, installDir)} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
-      } ${spec}`,
+      } ${pkg}@${version}`,
       { cwd: projectDir, stdio: 'pipe', env },
     )
 
