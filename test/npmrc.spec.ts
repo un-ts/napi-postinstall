@@ -9,7 +9,6 @@ import { DEFAULT_NPM_REGISTRY, NPMRC, PACKAGE_JSON } from '../src/constants.js'
 import {
   getNpmRegistry,
   getProjectDir,
-  quoteShellArgument,
   prepareNpmPrefix,
 } from '../src/helpers.js'
 
@@ -192,37 +191,5 @@ describe('getNpmRegistry', () => {
     })
 
     expect(getNpmRegistry(undefined, root)).toBe(DEFAULT_NPM_REGISTRY)
-  })
-})
-
-describe('quoteShellArgument', () => {
-  it('should hand any path over as one literal argument on posix', () => {
-    // `sh` takes everything in single quotes, only `'` needs the escape dance
-    expect(
-      quoteShellArgument('node_modules/@scope/host/npm-install', 'linux'),
-    ).toBe("'node_modules/@scope/host/npm-install'")
-    expect(quoteShellArgument("a 'b' $(boom) `x`", 'linux')).toBe(
-      "'a '\\''b'\\'' $(boom) `x`'",
-    )
-  })
-
-  it('should accept the paths npm install directories actually have', () => {
-    expect(
-      quoteShellArgument(
-        'node_modules/.pnpm/@scope+host@1.0.0/node_modules/@scope/host/npm-install',
-        'win32',
-      ),
-    ).toBe(
-      '"node_modules/.pnpm/@scope+host@1.0.0/node_modules/@scope/host/npm-install"',
-    )
-    expect(quoteShellArgument('a b/npm-install', 'win32')).toBe(
-      '"a b/npm-install"',
-    )
-  })
-
-  // `cmd` expands `%VAR%` and `!VAR!` even inside double quotes
-  it('should report the only paths windows cannot quote', () => {
-    expect(quoteShellArgument('a %TEMP% b', 'win32')).toBeUndefined()
-    expect(quoteShellArgument('a !b', 'win32')).toBeUndefined()
   })
 })

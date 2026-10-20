@@ -24,7 +24,6 @@ import {
   getNapiNativeTargets,
   getNpmRegistry,
   getProjectDir,
-  quoteShellArgument,
   hasWasiTarget,
   prepareNpmPrefix,
   removeRecursive,
@@ -147,10 +146,20 @@ function installUsingNPM(
   // will deadlock waiting for the global installation lock.
   const env = { ...process.env, npm_config_global: undefined }
 
-  // Create a temporary directory inside the "<napi>" package with an empty
-  // "package.json" file. We'll use this to run "npm install" in.
   const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
-  const installDir = path.join(pkgDir, 'npm-install')
+  const projectDir = getProjectDir()
+  // npm has to run from the project directory (see below), so this relative path
+  // becomes the `--prefix` argument. Both segments come from the dependency's own
+  // manifest, which npm validates for anything it publishes; keeping the directory
+  // inside `node_modules` also keeps it on the same filesystem as the packages it
+  // moves into place.
+  const installDir = path.join(
+    projectDir,
+    'node_modules',
+    '.napi-postinstall',
+    pkg,
+    version,
+  )
   try {
     fs.mkdirSync(installDir, { recursive: true })
   } catch (err) {
@@ -175,7 +184,6 @@ function installUsingNPM(
     // project `.npmrc` is copied there too, because npm only reads
     // `<prefix>/.npmrc` and a nested install would otherwise lose the registry
     // and its credentials (#37, #43).
-    const projectDir = getProjectDir()
     prepareNpmPrefix(installDir, projectDir)
 
     // Run "npm install" in the temporary directory which should download the
@@ -192,19 +200,11 @@ function installUsingNPM(
     // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
     // them pointing at the project rather than at the temporary prefix.
     //
-    // Quote the path instead of restricting it: `sh` handles any directory name
-    // when it is single quoted, and `cmd` only chokes on `%`/`!`, where npm has
-    // to run from the temporary prefix itself.
-    const prefixArg = quoteShellArgument(path.relative(projectDir, installDir))
     execSync(
-      `npm install --prefix ${prefixArg ?? '.'} --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix ${path.relative(projectDir, installDir)} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
-      {
-        cwd: prefixArg ? projectDir : installDir,
-        stdio: 'pipe',
-        env,
-      },
+      { cwd: projectDir, stdio: 'pipe', env },
     )
 
     // Remove the unused "package.json" file
@@ -216,7 +216,7 @@ function installUsingNPM(
 
     try {
       if (isWasm32Wasi) {
-        const newNodeModulesDir = path.resolve(installDir, '../node_modules')
+        const newNodeModulesDir = path.join(pkgDir, 'node_modules')
         const dirs = fs.readdirSync(nodeModulesDir)
         for (const dir of dirs) {
           // scoped packages need to be moved recursively in case there are same
@@ -288,6 +288,17 @@ function installUsingNPM(
       // for certain tools that scan over the file tree and expect it to have a
       // certain structure.
       removeRecursive(installDir)
+      // drop the empty scaffolding so repeated installs do not leave it behind
+      const base = path.join(projectDir, 'node_modules', '.napi-postinstall')
+      let empty = path.dirname(installDir)
+      while (empty.startsWith(base)) {
+        try {
+          fs.rmdirSync(empty)
+        } catch {
+          break
+        }
+        empty = path.dirname(empty)
+      }
     } catch {
       // Removing a file or directory can randomly break on Windows, returning
       // EBUSY for an arbitrary length of time. I think this happens when some

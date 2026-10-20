@@ -114,25 +114,6 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
   }
 }
 
-/**
- * Quotes `value` so a shell hands it over as one literal argument.
- *
- * `sh` can take any string in single quotes; `cmd` cannot protect `%VAR%` or
- * `!VAR!` inside double quotes, so those are reported as unsafe instead.
- */
-export function quoteShellArgument(
-  value: string,
-  platform: NodeJS.Platform = process.platform,
-) {
-  if (platform !== 'win32') {
-    // `'` has to leave and re-enter the quotes so the shell sees one argument
-    // eslint-disable-next-line unicorn-x/prefer-string-replace-all
-    const escaped = value.replace(/'/g, String.raw`'\''`)
-    return `'${escaped}'`
-  }
-  return /[%!]/.test(value) ? undefined : `"${value}"`
-}
-
 export function removeRecursive(dir: string) {
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
