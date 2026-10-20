@@ -24,7 +24,7 @@ import {
   getNapiNativeTargets,
   getNpmRegistry,
   getProjectDir,
-  isShellSafeArgument,
+  quoteShellArgument,
   hasWasiTarget,
   prepareNpmPrefix,
   removeRecursive,
@@ -192,18 +192,16 @@ function installUsingNPM(
     // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
     // them pointing at the project rather than at the temporary prefix.
     //
-    // That relative path only ever contains package name segments, but it still
-    // ends up in a shell command, so reject anything else and fall back to
-    // installing from the prefix itself instead of quoting it.
-    const relativeInstallDir = path.relative(projectDir, installDir)
-    const fromProjectDir = isShellSafeArgument(relativeInstallDir)
-    const prefixArg = fromProjectDir ? relativeInstallDir : '.'
+    // Quote the path instead of restricting it: `sh` handles any directory name
+    // when it is single quoted, and `cmd` only chokes on `%`/`!`, where npm has
+    // to run from the temporary prefix itself.
+    const prefixArg = quoteShellArgument(path.relative(projectDir, installDir))
     execSync(
-      `npm install --prefix ${prefixArg} --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix ${prefixArg ?? '.'} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
       {
-        cwd: fromProjectDir ? projectDir : installDir,
+        cwd: prefixArg ? projectDir : installDir,
         stdio: 'pipe',
         env,
       },
