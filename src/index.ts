@@ -238,11 +238,11 @@ function installUsingNPM(
 }
 
 async function downloadDirectlyFromNPM(
+  registry: string,
   pkg: string,
   version: string,
   subpath: string,
   nodePath: string,
-  registry: string,
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
@@ -414,11 +414,11 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // package from the npm registry over HTTP as a last resort.
         try {
           await downloadDirectlyFromNPM(
+            getRegistry(),
             pkg,
             version,
             subpath,
             nodePath,
-            getRegistry(),
           )
           break
         } catch (err) {
