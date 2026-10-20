@@ -31,6 +31,7 @@ For more details, please refer to the following issues:
   - [TL;DR for package users](#tldr-for-package-users)
   - [Notes for package authors](#notes-for-package-authors)
   - [Install](#install)
+  - [Postinstall script](#postinstall-script)
   - [CLI](#cli)
   - [API](#api)
     - [Types](#types)
@@ -63,6 +64,8 @@ You usually don't need to install `napi-postinstall` yourself — it is a
 
 ### Notes for package authors
 
+Prefer a `postinstall.js` that calls the API instead of invoking the
+`napi-postinstall` binary from `postinstall`; see [Postinstall script](#postinstall-script).
 If your package runs `napi-postinstall` in `postinstall`, you can copy this note
 into your own README:
 
@@ -89,23 +92,40 @@ npm i napi-postinstall
 bun add napi-postinstall
 ```
 
-### CLI
+### Postinstall script
 
-```sh
-napi-postinstall unrs-resolver #<napi-package-name>
+Do not invoke the `napi-postinstall` binary directly from `postinstall`. With
+`npm --no-bin-links`, or isolated layouts, the bin shim may not exist
+([unrs-resolver#190](https://github.com/unrs/unrs-resolver/issues/190)). Use a
+JavaScript file that calls the API instead:
+
+```js
+// postinstall.js
+const { checkAndPreparePackage } = require('napi-postinstall')
+
+checkAndPreparePackage('unrs-resolver').catch(error => {
+  console.error(error)
+  process.exitCode = 1
+})
 ```
-
-You can put it into `scripts#postinstall` of your `package.json`:
 
 ```json
 {
   "scripts": {
-    "postinstall": "napi-postinstall unrs-resolver"
+    "postinstall": "node postinstall.js"
   }
 }
 ```
 
 This will check and prepare the napi binding packages for you automatically.
+
+### CLI
+
+The CLI is available for manual use:
+
+```sh
+napi-postinstall unrs-resolver #<napi-package-name>
+```
 
 ### API
 
