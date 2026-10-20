@@ -29,7 +29,6 @@ import {
   hasWasiTarget,
   prepareNpmPrefix,
   removeRecursive,
-  stripNodeModules,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
 
@@ -156,11 +155,14 @@ function installUsingNPM(
   // manifest, which npm validates for anything it publishes; keeping the directory
   // inside `node_modules` also keeps it on the same filesystem as the packages it
   // moves into place.
-  // anchored at the tree the package itself lives in: for a global install npm
-  // runs the hook with cwd set to the package source (a local path or a temp
-  // extraction), while `npm_config_local_prefix` is the global prefix
+  // Anchored at the project directory, which is also npm's cwd below: the
+  // `--prefix` argument is `path.relative(projectDir, installDir)`, so keeping
+  // the directory under a path we know gives that argument a fixed shape. The
+  // package itself may live elsewhere (a global install runs the hook from the
+  // package source), which would otherwise leak its directory name into the
+  // command.
   const installParent = path.join(
-    stripNodeModules(pkgDir),
+    projectDir,
     'node_modules',
     '.napi-postinstall',
     pkg,

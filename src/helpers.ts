@@ -15,7 +15,7 @@ import type { NapiInfo, PackageJson, Platform } from './types.js'
 
 const NODE_MODULES_SEGMENT = /([\\/])node_modules\1/
 
-export function stripNodeModules(dir: string) {
+function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
   return index === -1 ? dir : dir.slice(0, index)
 }
