@@ -29,8 +29,11 @@ const checkVersion = ['1', 'check', 'true', 'yes'].includes(process.argv[4])
 
 const packageJson = readCwdPackage(packageName, packageVersion)
 
-if (packageJson) {
-  void checkAndPreparePackage(packageJson, checkVersion)
-} else {
-  void checkAndPreparePackage(packageName, packageVersion, checkVersion)
-}
+const promise = packageJson
+  ? checkAndPreparePackage(packageJson, checkVersion)
+  : checkAndPreparePackage(packageName, packageVersion, checkVersion)
+
+void promise.catch((err: unknown) => {
+  console.error(err)
+  process.exitCode = 1
+})

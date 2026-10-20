@@ -11,29 +11,6 @@ import {
 } from './helpers.js'
 import type { PackageJson } from './types.js'
 
-const EXECUTORS = {
-  npm: 'npx',
-  pnpm: 'pnpm',
-  yarn: 'yarn',
-  bun: 'bun',
-  deno: (args: string[]) => ['deno', 'run', `npm:${args[0]}`, ...args.slice(1)],
-}
-
-function constructCommand(
-  value: string[] | string | ((args: string[]) => string[]),
-  args: string[],
-) {
-  const list =
-    typeof value === 'function'
-      ? value(args)
-      : // eslint-disable-next-line unicorn-x/prefer-spread
-        ([] as string[]).concat(value, args)
-  return {
-    command: list[0],
-    args: list.slice(1),
-  }
-}
-
 /**
  * Fallback for webcontainer and docker environments like
  * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
@@ -104,34 +81,18 @@ function fallback<T = unknown>(
     return require(bindingEntry) as T
   }
 
-  const userAgent = ((process.env.npm_config_user_agent || '').split('/')[0] ||
-    'npm') as keyof typeof EXECUTORS
-
-  const executor = EXECUTORS[userAgent]
-
-  if (!executor) {
-    throw new Error(
-      errorMessage(
-        `Unsupported package manager: ${userAgent}. Supported managers are: ${Object.keys(
-          EXECUTORS,
-        ).join(', ')}.`,
-      ),
-    )
-  }
-
-  const { command, args } = constructCommand(executor, [
-    'napi-postinstall',
-    name,
-    version,
-    checkVersion ? '1' : '0',
-  ])
+  const cliPath = require.resolve('napi-postinstall/cli')
 
   const pkgDir = path.dirname(packageJsonPath)
 
-  execFileSync(command, args, {
-    cwd: pkgDir,
-    stdio: 'inherit',
-  })
+  execFileSync(
+    process.execPath,
+    [cliPath, name, pkgVersion, checkVersion ? '1' : '0'],
+    {
+      cwd: pkgDir,
+      stdio: 'inherit',
+    },
+  )
 
   // eslint-disable-next-line unicorn-x/prefer-string-replace-all
   process.env[`SKIP_${name.replace(/-/g, '_').toUpperCase()}_FALLBACK`] = '1'

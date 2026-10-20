@@ -23,6 +23,10 @@
       "types": "./lib/fallback.d.ts",
       "default": "./lib/fallback.js"
     },
+    "./cli": {
+      "types": "./lib/cli.d.ts",
+      "default": "./lib/cli.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
