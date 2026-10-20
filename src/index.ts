@@ -58,14 +58,21 @@ function fetch(url: string) {
 }
 
 /**
- * The requests below carry no credentials, so a registry taken from the project
- * `.npmrc` may reject them; keep the public registry as a fallback for packages
- * that are readable there.
+ * Reads a manifest from the configured registry, retrying the public one.
+ *
+ * These requests carry no credentials, so an authenticated registry rejects
+ * them, and this lookup used to read the public registry before the project
+ * `.npmrc` was honoured. It only reads metadata -- nothing is installed from the
+ * fallback -- while the tarball download below always sticks to the registry the
+ * project configured, so a private package can never be resolved to a public
+ * one.
  */
-async function fetchWithRegistryFallback(
+async function fetchPackageJson(
+  pkg: string,
+  version: string,
   registry: string,
-  pathname: string,
-): Promise<Buffer> {
+) {
+  const pathname = `${pkg}/${version}`
   try {
     return await fetch(`${registry}${pathname}`)
   } catch (error) {
@@ -78,10 +85,6 @@ async function fetchWithRegistryFallback(
     )
     return fetch(`${DEFAULT_NPM_REGISTRY}${pathname}`)
   }
-}
-
-function fetchPackageJson(pkg: string, version: string, registry: string) {
-  return fetchWithRegistryFallback(registry, `${pkg}/${version}`)
 }
 
 function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
@@ -300,12 +303,11 @@ async function downloadDirectlyFromNPM(
   const url = `${registry}${pathname}`
   errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
+    // No public registry fallback here: this writes an executable into the
+    // project, so it must come from the registry the project configured.
     fs.writeFileSync(
       nodePath,
-      extractFileFromTarGzip(
-        await fetchWithRegistryFallback(registry, pathname),
-        subpath,
-      ),
+      extractFileFromTarGzip(await fetch(url), subpath),
     )
   } catch (err) {
     errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))

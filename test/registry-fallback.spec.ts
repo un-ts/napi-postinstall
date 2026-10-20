@@ -51,7 +51,9 @@ vi.mock('node:https', () => ({
 }))
 
 describe('registry fallback', () => {
-  it('should retry the public registry when the project registry rejects the request', async () => {
+  // read-only lookup: it keeps working for public packages, and nothing is
+  // installed from the fallback
+  it('should retry the public registry when the project registry rejects the metadata request', async () => {
     await expect(
       checkAndPreparePackage('fake-pkg', '1.0.0'),
     ).resolves.toBeUndefined()

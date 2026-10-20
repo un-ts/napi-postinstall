@@ -111,6 +111,18 @@ describe('getProjectDir', () => {
     expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
   })
 
+  // accepted gap, documented in the changeset: reading the patterns would mean
+  // parsing YAML, so every descendant counts as a member
+  it('should treat every descendant of a pnpm workspace as a member', () => {
+    write(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
+    write(
+      path.join(root, 'tools', 'app', PACKAGE_JSON),
+      JSON.stringify({ name: 'app', version: '1.0.0' }),
+    )
+
+    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(root)
+  })
+
   it('should fall back to the cwd outside node_modules', () => {
     const cwd = path.join(root, 'somewhere')
 
