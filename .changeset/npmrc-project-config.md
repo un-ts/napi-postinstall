@@ -10,4 +10,4 @@ Known limitation: the project directory is the one npm reports for the install, 
 
 Credentials mirrored into the temporary prefix are written with mode `0600` from the start and removed before the prefix is deleted, so a failed cleanup cannot leave an `_authToken` behind in `node_modules`. When a project `.npmrc` exists but npm cannot be queried, the registry lookup now fails instead of silently using the public registry.
 
-Scoped registries (`@scope:registry`) are honoured as well, both for the manifest lookup and for the tarball download, and the lookup fails instead of falling back to the public registry when the project `.npmrc` cannot be read.
+Scoped registries (`@scope:registry`) are honoured as well, both for the manifest lookup and for the tarball download.

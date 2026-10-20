@@ -59,9 +59,6 @@ function fetch(url: string) {
   })
 }
 
-/** A registry URL can carry `user:pass`, keep it out of the logs. */
-const redactCredentials = (url: string) => url.replace(/\/\/[^/]+@/, '//***@')
-
 /**
  * Reads a manifest from the configured registry.
  *
@@ -81,7 +78,7 @@ async function fetchPackageJson(
   } catch (error) {
     if (registry !== DEFAULT_NPM_REGISTRY) {
       errorLog(
-        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redactCredentials(registry))}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
+        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(registry)}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
         getErrorMessage(error),
       )
     }
@@ -308,7 +305,7 @@ async function downloadDirectlyFromNPM(
   // have npm installed. Try downloading directly from npm as a last resort.
   const pathname = `${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   const url = `${registry}${pathname}`
-  errorLog(`Trying to download ${JSON.stringify(redactCredentials(url))}`)
+  errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     // No public registry fallback here: this writes an executable into the
     // project, so it must come from the registry the project configured.
@@ -317,10 +314,7 @@ async function downloadDirectlyFromNPM(
       extractFileFromTarGzip(await fetch(url), subpath),
     )
   } catch (err) {
-    errorLog(
-      `Failed to download ${JSON.stringify(redactCredentials(url))}`,
-      getErrorMessage(err),
-    )
+    errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))
     throw err
   }
 }

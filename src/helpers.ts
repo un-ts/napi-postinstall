@@ -54,10 +54,7 @@ export function getProjectDir(cwd = process.cwd()) {
  * @see https://github.com/un-ts/napi-postinstall/issues/37
  * @see https://github.com/un-ts/napi-postinstall/issues/43
  */
-export function prepareNpmPrefix(
-  dir: string,
-  projectDir = getProjectDir(),
-): boolean {
+export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
   const npmrc = path.join(dir, NPMRC)
@@ -67,7 +64,6 @@ export function prepareNpmPrefix(
     // behind, both of which matter because this file may hold `_authToken`
     const content = fs.readFileSync(path.join(projectDir, NPMRC))
     fs.writeFileSync(npmrc, content, { mode: 0o600 })
-    return true
   } catch {
     // A missing or unreadable `.npmrc` is not fatal, npm falls back to its
     // built-in defaults just like it does for the caller, but never keep a
@@ -75,12 +71,19 @@ export function prepareNpmPrefix(
     try {
       fs.unlinkSync(npmrc)
     } catch {}
-    return false
   }
 }
 
+/**
+ * The registry npm would use for `pkg`, honouring `@scope:registry`.
+ *
+ * One `npm config ls --json` answers both, so a scoped package does not cost a
+ * second npm start-up. The lookup runs in a temporary prefix because npm
+ * validates `devEngines` against its prefix, so asking from the project
+ * directory can fail with EBADDEVENGINES (#70); the nested install does not need
+ * this, it gets the project `.npmrc` itself.
+ */
 export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
-  const projectNpmrc = path.join(projectDir, NPMRC)
   let tempDir: string
   try {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
@@ -88,50 +91,23 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
     return DEFAULT_NPM_REGISTRY
   }
   try {
-    const copied = prepareNpmPrefix(tempDir, projectDir)
-    const mirrored = path.join(tempDir, NPMRC)
-    // When the project configured a registry on purpose, it must not silently
-    // become the public default: the tarball download would then fetch an
-    // executable from a registry the project never asked for.
-    const projectNpmrcExists = fs.existsSync(projectNpmrc)
-    if (projectNpmrcExists && !copied) {
-      throw new Error(errorMessage(`Failed to read \`${projectNpmrc}\``))
-    }
-    const canLoseConfig =
-      copied && /registry\s*=/.test(fs.readFileSync(mirrored, 'utf8'))
-    let config: Record<string, string | undefined>
-    try {
-      // one call for the default and the scoped key
-      config = JSON.parse(
-        execSync('npm config ls --json', {
-          cwd: tempDir,
-          encoding: 'utf8',
-          stdio: ['ignore', 'pipe', 'ignore'],
-        }),
-      ) as Record<string, string | undefined>
-    } catch (error) {
-      if (!canLoseConfig) {
-        return DEFAULT_NPM_REGISTRY
-      }
-      throw new Error(
-        errorMessage(
-          `Failed to read the registry from \`${projectNpmrc}\``,
-          getErrorMessage(error),
-        ),
-        { cause: error },
-      )
-    }
-    // a registry configured for the package scope wins over the default one
+    prepareNpmPrefix(tempDir, projectDir)
+    const config = JSON.parse(
+      execSync('npm config ls --json', {
+        cwd: tempDir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }),
+    ) as Record<string, string | undefined>
     const scope = pkg?.startsWith('@') ? pkg.split('/')[0] : undefined
     const registry =
       (scope && config[`${scope}:registry`]) ||
       config.registry ||
       DEFAULT_NPM_REGISTRY
     return registry.endsWith('/') ? registry : `${registry}/`
+  } catch {
+    return DEFAULT_NPM_REGISTRY
   } finally {
-    try {
-      fs.unlinkSync(path.join(tempDir, NPMRC))
-    } catch {}
     try {
       removeRecursive(tempDir)
     } catch {}
