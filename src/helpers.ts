@@ -1,19 +1,179 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, WASM32_WASI } from './constants.js'
+import {
+  DEFAULT_NPM_REGISTRY,
+  LOG_PREFIX,
+  NPMRC,
+  PACKAGE_JSON,
+  WASM32_WASI,
+} from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
-export function getGlobalNpmRegistry() {
+const NODE_MODULES_SEGMENT = /[\\/]node_modules[\\/]/
+const PNPM_WORKSPACE = 'pnpm-workspace.yaml'
+
+/** `.npmrc` keys holding a filesystem path, which npm resolves relative to the prefix. */
+const NPMRC_PATH_KEYS = new Set([
+  'cache',
+  'cafile',
+  'certfile',
+  'globalconfig',
+  'keyfile',
+  'logs-dir',
+  'prefix',
+  'tmp',
+  'userconfig',
+])
+
+function stripNodeModules(dir: string) {
+  const index = dir.search(NODE_MODULES_SEGMENT)
+  return index === -1 ? dir : dir.slice(0, index)
+}
+
+function declaresWorkspaces(dir: string) {
   try {
+    const { workspaces } = JSON.parse(
+      fs.readFileSync(path.join(dir, PACKAGE_JSON), 'utf8'),
+    ) as { workspaces?: unknown }
+    return Boolean(workspaces)
+  } catch {
+    return false
+  }
+}
+
+function findWorkspaceRoot(dir: string) {
+  let current = dir
+  for (;;) {
+    if (
+      fs.existsSync(path.join(current, PNPM_WORKSPACE)) ||
+      declaresWorkspaces(current)
+    ) {
+      return current
+    }
+    const parent = path.dirname(current)
+    if (parent === current) {
+      return dir
+    }
+    current = parent
+  }
+}
+
+/**
+ * The directory holding the `.npmrc` that applies to the current install.
+ *
+ * npm only reads project config from `<localPrefix>/.npmrc`, and it resolves no
+ * prefix at all when its cwd is inside `node_modules`, so neither the cwd nor an
+ * ancestor lookup is enough on its own.
+ */
+export function getProjectDir(cwd = process.cwd()) {
+  // npm computes `localPrefix` from its own working directory and exports it to
+  // lifecycle scripts, so this value already accounts for nested installs and
+  // for workspaces.
+  const localPrefix = process.env.npm_config_local_prefix
+  if (localPrefix) {
+    return stripNodeModules(path.resolve(localPrefix))
+  }
+  // pnpm/yarn do not export it and programmatic callers have no env at all:
+  // rebuild it the way npm does. Drop the `node_modules/<pkg>` segments the
+  // package was installed into, then walk up to the workspace root, because npm
+  // ignores the `.npmrc` of a workspace member.
+  return findWorkspaceRoot(stripNodeModules(path.resolve(cwd)))
+}
+
+function isRelativePath(value: string) {
+  return !(
+    value.startsWith('/') ||
+    value.startsWith('\\') ||
+    value.startsWith('~') ||
+    value.includes('$') ||
+    /^[a-z]:/i.test(value) ||
+    /^[a-z][\w+.-]*:\/\//i.test(value)
+  )
+}
+
+/**
+ * npm resolves relative path values against the prefix, so mirroring `.npmrc`
+ * into a temporary prefix would otherwise point `cafile`, `cache`, ... at the
+ * wrong directory.
+ */
+function absolutizeNpmrc(content: string, projectDir: string) {
+  return content
+    .replace(/^\uFEFF/, '')
+    .split(/\r?\n/)
+    .map(line => {
+      const separator = line.indexOf('=')
+      if (separator === -1) {
+        return line
+      }
+      const key = line.slice(0, separator).trim()
+      if (!NPMRC_PATH_KEYS.has(key.toLowerCase())) {
+        return line
+      }
+      const rawValue = line.slice(separator + 1).trim()
+      const quoted = /^(['"]).*\1$/.test(rawValue)
+      const value = quoted ? rawValue.slice(1, -1) : rawValue
+      if (!value || !isRelativePath(value)) {
+        return line
+      }
+      const resolved = path.resolve(projectDir, value)
+      const nextValue = quoted ? `"${resolved}"` : resolved
+      return `${key}=${nextValue}`
+    })
+    .join('\n')
+}
+
+/**
+ * Prepares `dir` to be used as an npm prefix for a nested install: an empty
+ * `package.json` so npm does not apply the caller's `devEngines`, and a mirror of
+ * the project `.npmrc` so the install keeps its registry and credentials.
+ *
+ * @see https://github.com/un-ts/napi-postinstall/issues/37
+ * @see https://github.com/un-ts/napi-postinstall/issues/43
+ */
+export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
+  try {
+    fs.writeFileSync(
+      path.join(dir, NPMRC),
+      absolutizeNpmrc(
+        fs.readFileSync(path.join(projectDir, NPMRC), 'utf8'),
+        projectDir,
+      ),
+      { mode: 0o600 },
+    )
+  } catch {
+    // A missing or unreadable `.npmrc` is not fatal, npm falls back to its
+    // built-in defaults just like it does for the caller.
+  }
+}
+
+export function getNpmRegistry(projectDir = getProjectDir()) {
+  let tempDir: string | undefined
+  try {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+    prepareNpmPrefix(tempDir, projectDir)
     const registry = execSync('npm config get registry', {
+      cwd: tempDir,
       encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
+    if (!registry) {
+      return DEFAULT_NPM_REGISTRY
+    }
     return registry.endsWith('/') ? registry : `${registry}/`
   } catch {
     return DEFAULT_NPM_REGISTRY
+  } finally {
+    if (tempDir) {
+      try {
+        removeRecursive(tempDir)
+      } catch {}
+    }
   }
 }
 

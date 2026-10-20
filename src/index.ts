@@ -13,10 +13,11 @@ import {
   errorLog,
   errorMessage,
   getErrorMessage,
-  getGlobalNpmRegistry,
   getNapiInfoFromPackageJson,
   getNapiNativeTargets,
+  getNpmRegistry,
   hasWasiTarget,
+  prepareNpmPrefix,
   removeRecursive,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
@@ -126,7 +127,12 @@ function installUsingNPM(
   try {
     const packageJsonPath = path.join(installDir, PACKAGE_JSON)
 
-    fs.writeFileSync(packageJsonPath, '{}')
+    // The temporary directory gets its own empty `package.json`, so npm treats
+    // it as the project root: that avoids the caller's `devEngines` (#70). The
+    // project `.npmrc` is mirrored there too, because npm only reads
+    // `<prefix>/.npmrc` and a nested install would otherwise lose the registry
+    // and its credentials (#37, #43).
+    prepareNpmPrefix(installDir)
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"
@@ -232,6 +238,7 @@ function installUsingNPM(
 }
 
 async function downloadDirectlyFromNPM(
+  registry: string,
   pkg: string,
   version: string,
   subpath: string,
@@ -239,7 +246,7 @@ async function downloadDirectlyFromNPM(
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `${getGlobalNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const url = `${registry}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     fs.writeFileSync(
@@ -268,6 +275,8 @@ export async function checkAndPreparePackage(
   checkVersion?: boolean,
 ) {
   let packageJson: PackageJson
+  let npmRegistry: string | undefined
+  const getRegistry = () => (npmRegistry ??= getNpmRegistry())
 
   if (typeof packageNameOrPackageJson === 'string') {
     try {
@@ -285,7 +294,7 @@ export async function checkAndPreparePackage(
       }
       const pkg = packageNameOrPackageJson
       const packageJsonBuffer = await fetch(
-        `${getGlobalNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
+        `${getRegistry()}${pkg}/${versionOrCheckVersion}`,
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),
@@ -404,7 +413,13 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(pkg, version, subpath, nodePath)
+          await downloadDirectlyFromNPM(
+            getRegistry(),
+            pkg,
+            version,
+            subpath,
+            nodePath,
+          )
           break
         } catch (err) {
           throw new Error(
