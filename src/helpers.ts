@@ -46,10 +46,9 @@ export function getNpmRegistry(cwd = getProjectDir()) {
 }
 
 export function copyNpmrcTo(dir: string, cwd = getProjectDir()) {
-  const npmrc = path.join(cwd, '.npmrc')
-  if (fs.existsSync(npmrc)) {
-    fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
-  }
+  try {
+    fs.copyFileSync(path.join(cwd, '.npmrc'), path.join(dir, '.npmrc'))
+  } catch {}
 }
 
 export function removeRecursive(dir: string) {

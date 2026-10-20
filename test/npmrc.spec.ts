@@ -51,4 +51,17 @@ describe('npmrc', () => {
       fs.rmSync(root, { recursive: true, force: true })
     }
   })
+
+  it('should ignore a missing npmrc', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+    try {
+      const installDir = path.join(root, 'npm-install')
+      fs.mkdirSync(installDir)
+
+      expect(() => copyNpmrcTo(installDir, root)).not.toThrow()
+      expect(fs.existsSync(path.join(installDir, '.npmrc'))).toBe(false)
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
 })
