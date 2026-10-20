@@ -23,26 +23,17 @@ function readCwdPackage(
   } catch {}
 }
 
-export function run(
-  packageName = process.argv[2],
-  packageVersion = process.argv[3],
-  versionFlag = process.argv[4],
-): Promise<void> {
-  const checkVersion = ['1', 'check', 'true', 'yes'].includes(versionFlag)
+const packageName = process.argv[2]
+const packageVersion = process.argv[3]
+const checkVersion = ['1', 'check', 'true', 'yes'].includes(process.argv[4])
 
-  const packageJson = readCwdPackage(packageName, packageVersion)
+const packageJson = readCwdPackage(packageName, packageVersion)
 
-  const promise = packageJson
-    ? checkAndPreparePackage(packageJson, checkVersion)
-    : checkAndPreparePackage(packageName, packageVersion, checkVersion)
+const promise = packageJson
+  ? checkAndPreparePackage(packageJson, checkVersion)
+  : checkAndPreparePackage(packageName, packageVersion, checkVersion)
 
-  return promise.catch((err: unknown) => {
-    console.error(err)
-    process.exitCode = 1
-  })
-}
-
-/* v8 ignore next 3 */
-if (require.main === module) {
-  void run()
-}
+void promise.catch((err: unknown) => {
+  console.error(err)
+  process.exitCode = 1
+})
