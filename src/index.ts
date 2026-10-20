@@ -161,12 +161,11 @@ function installUsingNPM(
   // package itself may live elsewhere (a global install runs the hook from the
   // package source), which would otherwise leak its directory name into the
   // command.
-  const installParent = path.join(
-    projectDir,
-    'node_modules',
-    '.napi-postinstall',
-    pkg,
-  )
+  const projectNodeModules = path.join(projectDir, 'node_modules')
+  // A global install has no `node_modules` at the prefix, so remember whether the
+  // directory below is ours to remove again.
+  const createdProjectNodeModules = !fs.existsSync(projectNodeModules)
+  const installParent = path.join(projectNodeModules, '.napi-postinstall', pkg)
   let installDir: string
   try {
     fs.mkdirSync(installParent, { recursive: true })
@@ -304,7 +303,7 @@ function installUsingNPM(
       // certain structure.
       removeRecursive(installDir)
       // drop the empty scaffolding so repeated installs do not leave it behind
-      const base = path.join(projectDir, 'node_modules', '.napi-postinstall')
+      const base = path.join(projectNodeModules, '.napi-postinstall')
       let empty = path.dirname(installDir)
       while (empty.startsWith(base)) {
         try {
@@ -313,6 +312,11 @@ function installUsingNPM(
           break
         }
         empty = path.dirname(empty)
+      }
+      if (createdProjectNodeModules) {
+        try {
+          fs.rmdirSync(projectNodeModules)
+        } catch {}
       }
     } catch {
       // Removing a file or directory can randomly break on Windows, returning
