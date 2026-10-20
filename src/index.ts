@@ -242,10 +242,11 @@ async function downloadDirectlyFromNPM(
   version: string,
   subpath: string,
   nodePath: string,
+  registry: string,
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `${getNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const url = `${registry}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     fs.writeFileSync(
@@ -274,6 +275,8 @@ export async function checkAndPreparePackage(
   checkVersion?: boolean,
 ) {
   let packageJson: PackageJson
+  let npmRegistry: string | undefined
+  const getRegistry = () => (npmRegistry ??= getNpmRegistry())
 
   if (typeof packageNameOrPackageJson === 'string') {
     try {
@@ -291,7 +294,7 @@ export async function checkAndPreparePackage(
       }
       const pkg = packageNameOrPackageJson
       const packageJsonBuffer = await fetch(
-        `${getNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
+        `${getRegistry()}${pkg}/${versionOrCheckVersion}`,
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),
@@ -410,7 +413,13 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(pkg, version, subpath, nodePath)
+          await downloadDirectlyFromNPM(
+            pkg,
+            version,
+            subpath,
+            nodePath,
+            getRegistry(),
+          )
           break
         } catch (err) {
           throw new Error(
