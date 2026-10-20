@@ -24,8 +24,7 @@ export function getNpmRegistry(cwd = getProjectDir()) {
   let tempDir: string | undefined
   try {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
-    copyNpmrcTo(tempDir, cwd)
-    fs.writeFileSync(path.join(tempDir, PACKAGE_JSON), '{}')
+    prepareNpmPrefix(tempDir, cwd)
     const registry = execSync('npm config get registry', {
       cwd: tempDir,
       encoding: 'utf8',
@@ -62,6 +61,11 @@ export function copyNpmrcTo(dir: string, cwd = getProjectDir()) {
       fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
     }
   } catch {}
+}
+
+export function prepareNpmPrefix(dir: string, cwd = getProjectDir()) {
+  fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
+  copyNpmrcTo(dir, cwd)
 }
 
 export function removeRecursive(dir: string) {
