@@ -162,28 +162,7 @@ function installUsingNPM(
   // package source), which would otherwise leak its directory name into the
   // command.
   const projectNodeModules = path.join(projectDir, 'node_modules')
-  // A global install has no `node_modules` at the prefix, so remember whether the
-  // directory below is ours to remove again.
-  const createdProjectNodeModules = !fs.existsSync(projectNodeModules)
   const installParent = path.join(projectNodeModules, '.napi-postinstall', pkg)
-  const cleanupScaffolding = (dir?: string) => {
-    // drop the empty scaffolding so repeated installs do not leave it behind
-    const base = path.join(projectNodeModules, '.napi-postinstall')
-    let empty = dir ? path.dirname(dir) : base
-    while (empty.startsWith(base)) {
-      try {
-        fs.rmdirSync(empty)
-      } catch {
-        break
-      }
-      empty = path.dirname(empty)
-    }
-    if (createdProjectNodeModules) {
-      try {
-        fs.rmdirSync(projectNodeModules)
-      } catch {}
-    }
-  }
   let installDir: string
   try {
     fs.mkdirSync(installParent, { recursive: true })
@@ -195,8 +174,6 @@ function installUsingNPM(
     // `package.json` or the temporary `node_modules`.
     installDir = fs.mkdtempSync(path.join(installParent, `${version}-`))
   } catch (err) {
-    // the scaffolding, and possibly `<projectDir>/node_modules`, may already exist
-    cleanupScaffolding()
     const error = err as NodeJS.ErrnoException
     if (error.code === 'EROFS') {
       // This can happen if the package is installed in a read-only location
@@ -325,7 +302,6 @@ function installUsingNPM(
       // for certain tools that scan over the file tree and expect it to have a
       // certain structure.
       removeRecursive(installDir)
-      cleanupScaffolding(installDir)
     } catch {
       // Removing a file or directory can randomly break on Windows, returning
       // EBUSY for an arbitrary length of time. I think this happens when some
