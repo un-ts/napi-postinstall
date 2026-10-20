@@ -39,14 +39,14 @@ describe('fallback CLI', () => {
       ).toEqual({ ok: true })
       expect(execFileSync).toHaveBeenCalledWith(
         process.execPath,
-        [expect.stringMatching(/lib[\\/]cli\.js$/), 'fake-host', '1.0.0', '1'],
-        expect.objectContaining({
-          cwd: pkgDir,
-          env: expect.objectContaining({
-            NAPI_POSTINSTALL_PACKAGE_JSON: path.join(pkgDir, 'package.json'),
-          }) as unknown,
-          stdio: 'inherit',
-        }),
+        [
+          expect.stringMatching(/lib[\\/]cli\.js$/),
+          'fake-host',
+          '1.0.0',
+          '1',
+          path.join(pkgDir, 'package.json'),
+        ],
+        { cwd: pkgDir, stdio: 'inherit' },
       )
       expect(process.env.SKIP_FAKE_HOST_FALLBACK).toBe('1')
     } finally {

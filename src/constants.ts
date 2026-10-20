@@ -19,4 +19,3 @@ export const WASM32_WASI = `${WASM32}-${WASI}`
 export const EABI = 'eabi'
 
 export const PACKAGE_JSON = 'package.json'
-export const PACKAGE_JSON_ENV = 'NAPI_POSTINSTALL_PACKAGE_JSON'

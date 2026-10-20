@@ -2,7 +2,7 @@
 
 import fs from 'node:fs'
 
-import { PACKAGE_JSON, PACKAGE_JSON_ENV } from './constants'
+import { PACKAGE_JSON } from './constants'
 
 import { checkAndPreparePackage, PackageJson } from './index.js'
 
@@ -27,7 +27,7 @@ const packageName = process.argv[2]
 const packageVersion = process.argv[3]
 const checkVersion = ['1', 'check', 'true', 'yes'].includes(process.argv[4])
 
-const packageJsonPath = process.env[PACKAGE_JSON_ENV]
+const packageJsonPath = process.argv[5]
 
 const packageJson = packageJsonPath
   ? (require(packageJsonPath) as PackageJson)

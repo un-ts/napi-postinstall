@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { PACKAGE_JSON_ENV, WASM32_WASI } from './constants.js'
+import { WASM32_WASI } from './constants.js'
 import {
   errorMessage,
   getNapiInfoFromPackageJson,
@@ -21,7 +21,7 @@ import type { PackageJson } from './types.js'
 function fallback<T = unknown>(
   packageJsonPath: string,
   checkVersion?: boolean,
-): T {
+) {
   const packageJson = require(packageJsonPath) as PackageJson
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
@@ -87,13 +87,9 @@ function fallback<T = unknown>(
 
   execFileSync(
     process.execPath,
-    [cliPath, name, version, checkVersion ? '1' : '0'],
+    [cliPath, name, version, checkVersion ? '1' : '0', packageJsonPath],
     {
       cwd: pkgDir,
-      env: {
-        ...process.env,
-        [PACKAGE_JSON_ENV]: packageJsonPath,
-      },
       stdio: 'inherit',
     },
   )
