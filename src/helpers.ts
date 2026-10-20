@@ -13,7 +13,7 @@ import {
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
-const NODE_MODULES_SEGMENT = /[\\/]node_modules[\\/]/
+const NODE_MODULES_SEGMENT = /([\\/])node_modules\1/
 
 function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
