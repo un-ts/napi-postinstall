@@ -51,6 +51,9 @@ You usually don't need to install `napi-postinstall` yourself — it is a
 
 - It works around [npm/cli#4828](https://github.com/npm/cli/issues/4828), where
   `npm` can fail to install the correct platform-specific optional dependency.
+- When it has to install a missing binding by itself, it uses the registry,
+  credentials and CA settings from the project `.npmrc`, so private registries
+  work without extra configuration.
 - `pnpm` and `yarn` resolve optional dependencies correctly in most cases, so
   the helper is usually a no-op there. Leaving install scripts enabled is the
   safe default.
