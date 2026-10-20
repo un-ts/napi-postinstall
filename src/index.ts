@@ -27,6 +27,7 @@ import {
   getNpmRegistry,
   getProjectDir,
   hasWasiTarget,
+  movePath,
   prepareNpmPrefix,
   removeRecursive,
 } from './helpers.js'
@@ -225,6 +226,7 @@ function installUsingNPM(
     try {
       if (isWasm32Wasi) {
         const newNodeModulesDir = path.join(pkgDir, 'node_modules')
+        fs.mkdirSync(newNodeModulesDir, { recursive: true })
         const dirs = fs.readdirSync(nodeModulesDir)
         for (const dir of dirs) {
           // scoped packages need to be moved recursively in case there are same
@@ -236,7 +238,7 @@ function installUsingNPM(
             const nestedDirs = fs.readdirSync(subdir)
             for (const nestedDir of nestedDirs) {
               try {
-                fs.renameSync(
+                movePath(
                   path.join(subdir, nestedDir),
                   path.join(newPath, nestedDir),
                 )
@@ -247,7 +249,7 @@ function installUsingNPM(
             }
           } else {
             try {
-              fs.renameSync(
+              movePath(
                 path.join(nodeModulesDir, dir),
                 path.join(newNodeModulesDir, dir),
               )
@@ -267,9 +269,6 @@ function installUsingNPM(
          *
          * See also [npm/cli#4828](https://github.com/npm/cli/issues/4828)
          */
-        // same filesystem as the temporary directory in every layout we know
-        // (project, pnpm store, global prefix); a host package linked from another
-        // volume would fail here with EXDEV, as it would have before this change
         const newPath = path.resolve(
           pkgDir,
           hostPkg
@@ -279,13 +278,13 @@ function installUsingNPM(
           pkg,
         )
         fs.mkdirSync(newPath, { recursive: true })
-        fs.renameSync(path.join(nodeModulesDir, pkg), newPath)
+        movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {
       // Move the downloaded binary executable into place. The destination path
       // is the same one that the JavaScript API code uses so it will be able to
       // find the binary executable here later.
-      fs.renameSync(path.join(nodeModulesDir, pkg, subpath), nodePath)
+      movePath(path.join(nodeModulesDir, pkg, subpath), nodePath)
     }
   } finally {
     try {

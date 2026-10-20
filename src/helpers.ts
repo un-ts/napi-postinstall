@@ -130,6 +130,25 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
   }
 }
 
+/**
+ * `renameSync`, falling back to a copy when the destination is on another
+ * filesystem: the temporary directory lives under the project, while a linked
+ * host package can live on another volume.
+ */
+export function movePath(from: string, to: string) {
+  try {
+    fs.renameSync(from, to)
+  } catch (error) {
+    const { code } = error as NodeJS.ErrnoException
+    // `cpSync` needs Node 16.7+, older versions keep the previous failure
+    if (code !== 'EXDEV' || typeof fs.cpSync !== 'function') {
+      throw error
+    }
+    fs.cpSync(from, to, { recursive: true })
+    removeRecursive(from)
+  }
+}
+
 export function removeRecursive(dir: string) {
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
