@@ -89,12 +89,13 @@ describe('project npmrc', () => {
   // values against the project directory, and a mocked child_process could only
   // repeat our own assumptions back at us.
   //
-  // The timeout is headroom for npm's start-up on a loaded CI runner (measured
-  // at ~43s on Windows, where the fixture installs run in parallel), not for the
-  // logic, which takes well under a second locally.
+  // The timeout is headroom for npm's start-up on a loaded CI runner, not for the
+  // logic, which takes well under a second locally. On the Windows runners a
+  // single `npm config get registry` in a sibling test has measured 37s, 56s and
+  // 65s, and this test starts npm twice, so 60s was not enough.
   it(
     'should install the binding from the registry configured in the project npmrc',
-    { timeout: 60_000 },
+    { timeout: 120_000 },
     async () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
       const project = path.join(root, 'project')
