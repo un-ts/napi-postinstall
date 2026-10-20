@@ -10,6 +10,8 @@ import zlib from 'node:zlib'
 import {
   DEFAULT_NPM_REGISTRY,
   meta,
+  NPM_PACKAGE_NAME,
+  NPM_PINNED_VERSION,
   NPMRC,
   PACKAGE_JSON,
   WASM32,
@@ -33,16 +35,6 @@ import type { PackageJson } from './types.js'
 export type * from './types.js'
 
 const REDIRECT_STATUS_CODES = new Set([301, 302, 307, 308])
-
-/**
- * Both values come from the dependency's own manifest, not from anything npm
- * validated: the name from `napi.packageName`, the version from the matching
- * `optionalDependencies` entry, which napi-rs pins to the published version. The
- * patterns are npm's package name grammar and that pinned version, and neither
- * can contain a shell metacharacter, so the command needs no quoting.
- */
-const NPM_PACKAGE_NAME = /^(?:@[\w.-]+\/)?[\w.-]+$/
-const NPM_PINNED_VERSION = /^[\w.+-]+$/
 
 function fetch(url: string) {
   return new Promise<Buffer>((resolve, reject) => {

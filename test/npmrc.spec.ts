@@ -5,7 +5,13 @@ import path from 'node:path'
 
 import { beforeEach, vi } from 'vitest'
 
-import { DEFAULT_NPM_REGISTRY, NPMRC, PACKAGE_JSON } from '../src/constants.js'
+import {
+  DEFAULT_NPM_REGISTRY,
+  NPM_PACKAGE_NAME,
+  NPM_PINNED_VERSION,
+  NPMRC,
+  PACKAGE_JSON,
+} from '../src/constants.js'
 import {
   getNpmRegistry,
   getProjectDir,
@@ -199,5 +205,31 @@ describe('getNpmRegistry', () => {
     })
 
     expect(getNpmRegistry(undefined, root)).toBe(DEFAULT_NPM_REGISTRY)
+  })
+})
+
+describe('install arguments', () => {
+  it('should accept the names and versions napi-rs publishes', () => {
+    for (const pkg of [
+      '@unrs/resolver-binding-darwin-arm64',
+      '@swc/core-linux-x64-gnu',
+      'rolldown-linux-x64-gnu',
+    ]) {
+      expect(NPM_PACKAGE_NAME.test(pkg)).toBe(true)
+    }
+    for (const version of ['1.12.2', '1.0.0-beta.1+build', '0.3.5']) {
+      expect(NPM_PINNED_VERSION.test(version)).toBe(true)
+    }
+  })
+
+  // both are joined into the temporary install directory, so `..` would walk out
+  // of `node_modules/.napi-postinstall`
+  it('should refuse path segments and shell metacharacters', () => {
+    for (const pkg of ['..', '../x', '.hidden', '_hidden', 'a;b', '$(id)']) {
+      expect(NPM_PACKAGE_NAME.test(pkg)).toBe(false)
+    }
+    for (const version of ['.', '..', '../x', '1.0.0; rm -rf /', '*']) {
+      expect(NPM_PINNED_VERSION.test(version)).toBe(false)
+    }
   })
 })

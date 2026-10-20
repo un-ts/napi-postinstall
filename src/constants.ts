@@ -21,3 +21,14 @@ export const EABI = 'eabi'
 export const PACKAGE_JSON = 'package.json'
 
 export const NPMRC = '.npmrc'
+
+/**
+ * The binding package name and the version that ends up in the temporary install
+ * directory and in the npm command. Both come from the dependency's own manifest
+ * (`napi.packageName` and the matching `optionalDependencies` value), which npm
+ * never validates, so they are checked here: a leading `.`/`_` is not a valid npm
+ * name, and `.`/`..` as a whole version would walk out of the intended directory.
+ */
+export const NPM_PACKAGE_NAME = /^(?:@[a-z0-9-][\w.-]*\/)?[a-z0-9-][\w.-]*$/i
+
+export const NPM_PINNED_VERSION = /^(?!\.\.?$)[\w.+-]+$/
