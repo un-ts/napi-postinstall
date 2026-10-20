@@ -6,4 +6,4 @@ Respect the project's `.npmrc` when a missing platform binding has to be install
 
 The registry used by the JS API is resolved from the same config as well, and stays there: neither the manifest lookup nor the tarball download falls back to the public registry, because those requests carry no credentials and a public manifest could otherwise decide which package is resolved next. A private registry that requires authentication on reads now fails those lookups with its own error instead of resolving a public package of the same name.
 
-Known limitation: the project directory is inferred without parsing workspace patterns. A `workspaces` entry is matched by its static prefix, and every descendant of a `pnpm-workspace.yaml` counts as a member.
+Known limitation: the project directory is the one npm reports for the install, or the directory that owns the `node_modules` the package was installed into. Workspace roots are not derived, so an install that lands in a member's `node_modules` while the `.npmrc` only exists at the workspace root is not covered yet.

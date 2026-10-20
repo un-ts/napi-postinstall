@@ -61,7 +61,9 @@ describe('getProjectDir', () => {
     ).toBe(root)
   })
 
-  it('should resolve the workspace root of a workspace member', () => {
+  // deliberate: deriving workspace roots needs npm's glob and YAML semantics,
+  // and an approximation can pick up another project's registry and credentials
+  it('should not climb to a workspace root', () => {
     write(
       path.join(root, PACKAGE_JSON),
       JSON.stringify({
@@ -70,97 +72,15 @@ describe('getProjectDir', () => {
         workspaces: ['packages/*'],
       }),
     )
+    const member = path.join(root, 'packages', 'a')
     write(
-      path.join(root, 'packages', 'a', PACKAGE_JSON),
+      path.join(member, PACKAGE_JSON),
       JSON.stringify({ name: 'a', version: '1.0.0' }),
     )
 
-    // npm ignores the `.npmrc` of a workspace member, so the member must not
-    // shadow the root that actually holds the config.
-    expect(
-      getProjectDir(path.join(root, 'packages', 'a', 'node_modules', 'host')),
-    ).toBe(root)
-    expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
-  })
-
-  // npm keeps a standalone project's own config even when an unrelated
-  // directory above it happens to declare workspaces, and warns instead when a
-  // real member has its own `.npmrc`.
-  // yarn v1 introduced the object form; only `packages` holds patterns
-  it('should understand the object form of workspaces', () => {
-    write(
-      path.join(root, PACKAGE_JSON),
-      JSON.stringify({
-        name: 'root',
-        version: '1.0.0',
-        workspaces: {
-          packages: ['./packages/*'],
-          nohoist: ['**/react-native'],
-        },
-      }),
+    expect(getProjectDir(path.join(member, 'node_modules', 'host'))).toBe(
+      member,
     )
-    write(
-      path.join(root, 'packages', 'a', PACKAGE_JSON),
-      JSON.stringify({ name: 'a', version: '1.0.0' }),
-    )
-    write(
-      path.join(root, 'tools', 'app', PACKAGE_JSON),
-      JSON.stringify({ name: 'app', version: '1.0.0' }),
-    )
-
-    expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
-    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
-      path.join(root, 'tools', 'app'),
-    )
-  })
-
-  it('should only claim direct children for a bare wildcard', () => {
-    write(
-      path.join(root, PACKAGE_JSON),
-      JSON.stringify({ name: 'root', version: '1.0.0', workspaces: ['*'] }),
-    )
-
-    expect(getProjectDir(path.join(root, 'app'))).toBe(root)
-    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
-      path.join(root, 'tools', 'app'),
-    )
-  })
-
-  it('should not adopt a parent workspace the project is not a member of', () => {
-    write(
-      path.join(root, PACKAGE_JSON),
-      JSON.stringify({
-        name: 'root',
-        version: '1.0.0',
-        workspaces: ['packages/*'],
-      }),
-    )
-    write(
-      path.join(root, 'tools', 'app', PACKAGE_JSON),
-      JSON.stringify({ name: 'app', version: '1.0.0' }),
-    )
-
-    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
-      path.join(root, 'tools', 'app'),
-    )
-  })
-
-  it('should resolve the root declared by pnpm-workspace.yaml', () => {
-    write(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
-
-    expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
-  })
-
-  // accepted gap, documented in the changeset: reading the patterns would mean
-  // parsing YAML, so every descendant counts as a member
-  it('should treat every descendant of a pnpm workspace as a member', () => {
-    write(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
-    write(
-      path.join(root, 'tools', 'app', PACKAGE_JSON),
-      JSON.stringify({ name: 'app', version: '1.0.0' }),
-    )
-
-    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(root)
   })
 
   it('should fall back to the cwd outside node_modules', () => {

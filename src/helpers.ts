@@ -14,107 +14,30 @@ import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
 const NODE_MODULES_SEGMENT = /[\\/]node_modules[\\/]/
-const PNPM_WORKSPACE = 'pnpm-workspace.yaml'
 
 function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
   return index === -1 ? dir : dir.slice(0, index)
 }
 
-function readWorkspaces(dir: string) {
-  try {
-    const { workspaces } = JSON.parse(
-      fs.readFileSync(path.join(dir, PACKAGE_JSON), 'utf8'),
-    ) as { workspaces?: string[] | { packages?: string[] } }
-    // `workspaces` is either the array shorthand or the object form yarn v1
-    // introduced, where only `packages` holds the patterns
-    const patterns = Array.isArray(workspaces)
-      ? workspaces
-      : workspaces?.packages
-    return Array.isArray(patterns)
-      ? patterns.filter(
-          (pattern): pattern is string => typeof pattern === 'string',
-        )
-      : []
-  } catch {
-    return []
-  }
-}
-
-/**
- * Whether `root` claims `dir` through its `workspaces` patterns.
- *
- * A standalone project can live under a directory that happens to declare
- * workspaces; npm keeps the project's own config in that case and only defers to
- * the parent for real members (it even warns when a member has its own
- * `.npmrc`). Comparing the static prefix of each pattern is enough here and
- * avoids pulling in a glob matcher.
- */
-function isWorkspaceMember(root: string, dir: string) {
-  const workspaces = readWorkspaces(root)
-  if (workspaces.length === 0) {
-    // `pnpm-workspace.yaml` needs a YAML parser to read its patterns; a nested
-    // non-member project under a pnpm workspace is rare enough to accept.
-    return fs.existsSync(path.join(root, PNPM_WORKSPACE))
-  }
-  const relative = path.relative(root, dir).split(path.sep).join('/')
-  if (!relative || relative === '..' || relative.startsWith('../')) {
-    return false
-  }
-  return workspaces.some(pattern => {
-    if (!pattern || pattern.startsWith('!')) {
-      return false
-    }
-    let normalized = pattern
-    while (normalized.startsWith('./')) {
-      normalized = normalized.slice(2)
-    }
-    let prefix = normalized.split('*')[0]
-    while (prefix.endsWith('/')) {
-      prefix = prefix.slice(0, -1)
-    }
-    if (!prefix) {
-      // a bare `*` only claims the direct children of the workspace root
-      return !relative.includes('/')
-    }
-    return relative === prefix || relative.startsWith(`${prefix}/`)
-  })
-}
-
-function findWorkspaceRoot(dir: string) {
-  let current = dir
-  for (;;) {
-    if (isWorkspaceMember(current, dir)) {
-      return current
-    }
-    const parent = path.dirname(current)
-    if (parent === current) {
-      return dir
-    }
-    current = parent
-  }
-}
-
 /**
  * The directory holding the `.npmrc` that applies to the current install.
  *
  * npm only reads project config from `<localPrefix>/.npmrc`, and it resolves no
- * prefix at all when its cwd is inside `node_modules`, so neither the cwd nor an
- * ancestor lookup is enough on its own.
+ * prefix at all when its cwd is inside `node_modules`. For lifecycle scripts it
+ * exports the prefix it did resolve, so that value wins; otherwise fall back to
+ * the directory that owns the `node_modules` the package was installed into,
+ * which is the base case of the same rule and covers pnpm and yarn.
+ *
+ * Workspace roots are deliberately not re-derived: matching `workspaces` globs
+ * and `pnpm-workspace.yaml` would mean reimplementing npm's semantics, and an
+ * approximation can hand the nested install another project's registry and
+ * credentials. Revisit it if there is user feedback that the workspace root
+ * config is missing for an install inside a member's `node_modules`.
  */
 export function getProjectDir(cwd = process.cwd()) {
-  // npm computes `localPrefix` from its own working directory and exports it to
-  // lifecycle scripts, so this value already accounts for nested installs and
-  // for workspaces.
   const localPrefix = process.env.npm_config_local_prefix
-  if (localPrefix) {
-    return stripNodeModules(path.resolve(localPrefix))
-  }
-  // pnpm/yarn do not export it and programmatic callers have no env at all:
-  // rebuild it the way npm does. Drop the `node_modules/<pkg>` segments the
-  // package was installed into, then walk up to the workspace root, because npm
-  // ignores the `.npmrc` of a workspace member.
-  return findWorkspaceRoot(stripNodeModules(path.resolve(cwd)))
+  return stripNodeModules(path.resolve(localPrefix ?? cwd))
 }
 
 /**
