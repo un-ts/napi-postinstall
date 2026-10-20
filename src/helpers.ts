@@ -90,7 +90,11 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
   let tempDir: string
   try {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
-  } catch {
+  } catch (error) {
+    errorLog(
+      `Failed to create a temporary directory for the registry lookup, assuming ${DEFAULT_NPM_REGISTRY}`,
+      getErrorMessage(error),
+    )
     return DEFAULT_NPM_REGISTRY
   }
   try {
@@ -108,7 +112,11 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
       config.registry ||
       DEFAULT_NPM_REGISTRY
     return registry.endsWith('/') ? registry : `${registry}/`
-  } catch {
+  } catch (error) {
+    errorLog(
+      `Failed to read the registry from \`${path.join(projectDir, NPMRC)}\`, assuming ${DEFAULT_NPM_REGISTRY}`,
+      getErrorMessage(error),
+    )
     return DEFAULT_NPM_REGISTRY
   } finally {
     try {

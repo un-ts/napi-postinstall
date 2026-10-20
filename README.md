@@ -56,7 +56,9 @@ You usually don't need to install `napi-postinstall` yourself — it is a
   work without extra configuration. In a `pnpm`/`yarn` workspace it reads the
   `.npmrc` next to the package; if yours only exists at the workspace root, keep
   the install at the root (or copy the file into the member) until workspace
-  config resolution is implemented.
+  config resolution is implemented. The two lookups that happen in JavaScript —
+  reading a manifest, and downloading a tarball when `npm install` failed — fall
+  back to the public registry with a warning when npm itself cannot be queried.
 - `pnpm` and `yarn` resolve optional dependencies correctly in most cases, so
   the helper is usually a no-op there. Leaving install scripts enabled is the
   safe default.
