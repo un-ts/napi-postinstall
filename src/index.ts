@@ -7,7 +7,13 @@ import https from 'node:https'
 import path from 'node:path'
 import zlib from 'node:zlib'
 
-import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
+import {
+  DEFAULT_NPM_REGISTRY,
+  meta,
+  PACKAGE_JSON,
+  WASM32,
+  WASM32_WASI,
+} from './constants.js'
 import {
   downloadedNodePath,
   errorLog,
@@ -49,6 +55,33 @@ function fetch(url: string) {
       })
       .on('error', reject)
   })
+}
+
+/**
+ * The requests below carry no credentials, so a registry taken from the project
+ * `.npmrc` may reject them; keep the public registry as a fallback for packages
+ * that are readable there.
+ */
+async function fetchWithRegistryFallback(
+  registry: string,
+  pathname: string,
+): Promise<Buffer> {
+  try {
+    return await fetch(`${registry}${pathname}`)
+  } catch (error) {
+    if (registry === DEFAULT_NPM_REGISTRY) {
+      throw error
+    }
+    errorLog(
+      `Failed to fetch ${JSON.stringify(pathname)} from ${JSON.stringify(registry)}, retrying the public registry`,
+      getErrorMessage(error),
+    )
+    return fetch(`${DEFAULT_NPM_REGISTRY}${pathname}`)
+  }
+}
+
+function fetchPackageJson(pkg: string, version: string, registry: string) {
+  return fetchWithRegistryFallback(registry, `${pkg}/${version}`)
 }
 
 function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
@@ -149,11 +182,22 @@ function installUsingNPM(
     // Run it from the project directory: npm resolves relative values in
     // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
     // them pointing at the project rather than at the temporary prefix.
+    //
+    // That relative path only ever contains package name segments, but it still
+    // ends up in a shell command, so reject anything else and fall back to
+    // installing from the prefix itself instead of quoting it.
+    const relativeInstallDir = path.relative(projectDir, installDir)
+    const fromProjectDir = /^[\w@./\\-]+$/.test(relativeInstallDir)
+    const prefixArg = fromProjectDir ? relativeInstallDir : '.'
     execSync(
-      `npm install --prefix "${path.relative(projectDir, installDir)}" --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix ${prefixArg} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
-      { cwd: projectDir, stdio: 'pipe', env },
+      {
+        cwd: fromProjectDir ? projectDir : installDir,
+        stdio: 'pipe',
+        env,
+      },
     )
 
     // Remove the unused "package.json" file
@@ -252,12 +296,16 @@ async function downloadDirectlyFromNPM(
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `${registry}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const pathname = `${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const url = `${registry}${pathname}`
   errorLog(`Trying to download ${JSON.stringify(url)}`)
   try {
     fs.writeFileSync(
       nodePath,
-      extractFileFromTarGzip(await fetch(url), subpath),
+      extractFileFromTarGzip(
+        await fetchWithRegistryFallback(registry, pathname),
+        subpath,
+      ),
     )
   } catch (err) {
     errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))
@@ -299,8 +347,10 @@ export async function checkAndPreparePackage(
         )
       }
       const pkg = packageNameOrPackageJson
-      const packageJsonBuffer = await fetch(
-        `${getRegistry()}${pkg}/${versionOrCheckVersion}`,
+      const packageJsonBuffer = await fetchPackageJson(
+        pkg,
+        versionOrCheckVersion,
+        getRegistry(),
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),

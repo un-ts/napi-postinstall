@@ -21,24 +21,50 @@ function stripNodeModules(dir: string) {
   return index === -1 ? dir : dir.slice(0, index)
 }
 
-function declaresWorkspaces(dir: string) {
+function readWorkspaces(dir: string) {
   try {
     const { workspaces } = JSON.parse(
       fs.readFileSync(path.join(dir, PACKAGE_JSON), 'utf8'),
     ) as { workspaces?: unknown }
-    return Boolean(workspaces)
+    return Array.isArray(workspaces) ? (workspaces as string[]) : []
   } catch {
-    return false
+    return []
   }
+}
+
+/**
+ * Whether `root` claims `dir` through its `workspaces` patterns.
+ *
+ * A standalone project can live under a directory that happens to declare
+ * workspaces; npm keeps the project's own config in that case and only defers to
+ * the parent for real members (it even warns when a member has its own
+ * `.npmrc`). Comparing the static prefix of each pattern is enough here and
+ * avoids pulling in a glob matcher.
+ */
+function isWorkspaceMember(root: string, dir: string) {
+  const workspaces = readWorkspaces(root)
+  if (workspaces.length === 0) {
+    // `pnpm-workspace.yaml` needs a YAML parser to read its patterns; a nested
+    // non-member project under a pnpm workspace is rare enough to accept.
+    return fs.existsSync(path.join(root, PNPM_WORKSPACE))
+  }
+  const relative = path.relative(root, dir).split(path.sep).join('/')
+  return workspaces.some(pattern => {
+    if (!pattern || pattern.startsWith('!')) {
+      return false
+    }
+    let prefix = pattern.split('*')[0]
+    while (prefix.endsWith('/')) {
+      prefix = prefix.slice(0, -1)
+    }
+    return relative === prefix || relative.startsWith(`${prefix}/`)
+  })
 }
 
 function findWorkspaceRoot(dir: string) {
   let current = dir
   for (;;) {
-    if (
-      fs.existsSync(path.join(current, PNPM_WORKSPACE)) ||
-      declaresWorkspaces(current)
-    ) {
+    if (isWorkspaceMember(current, dir)) {
       return current
     }
     const parent = path.dirname(current)

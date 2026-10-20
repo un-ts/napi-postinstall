@@ -83,6 +83,28 @@ describe('getProjectDir', () => {
     expect(getProjectDir(path.join(root, 'packages', 'a'))).toBe(root)
   })
 
+  // npm keeps a standalone project's own config even when an unrelated
+  // directory above it happens to declare workspaces, and warns instead when a
+  // real member has its own `.npmrc`.
+  it('should not adopt a parent workspace the project is not a member of', () => {
+    write(
+      path.join(root, PACKAGE_JSON),
+      JSON.stringify({
+        name: 'root',
+        version: '1.0.0',
+        workspaces: ['packages/*'],
+      }),
+    )
+    write(
+      path.join(root, 'tools', 'app', PACKAGE_JSON),
+      JSON.stringify({ name: 'app', version: '1.0.0' }),
+    )
+
+    expect(getProjectDir(path.join(root, 'tools', 'app'))).toBe(
+      path.join(root, 'tools', 'app'),
+    )
+  })
+
   it('should resolve the root declared by pnpm-workspace.yaml', () => {
     write(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
 
