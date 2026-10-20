@@ -145,16 +145,18 @@ export function movePath(from: string, to: string) {
       throw error
     }
     fs.cpSync(from, to, { recursive: true })
-    // the source can be a single file, e.g. when only the binary is moved
-    if (fs.lstatSync(from).isDirectory()) {
-      removeRecursive(from)
-    } else {
-      fs.unlinkSync(from)
-    }
+    removeRecursive(from)
   }
 }
 
+/**
+ * Removes a directory tree, or a single file or symlink when given one.
+ */
 export function removeRecursive(dir: string) {
+  if (!fs.lstatSync(dir).isDirectory()) {
+    fs.unlinkSync(dir)
+    return
+  }
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
     let stats: fs.Stats

@@ -65,7 +65,7 @@ function fetch(url: string) {
  * must not reach the logs verbatim. `_authToken` style credentials are separate
  * config keys and are never printed.
  */
-const redactCredentials = (url: string) => url.replace(/\/\/[^/]+@/, '//***@')
+const redact = (url: string) => url.replace(/\/\/[^/]+@/, '//***@')
 
 /**
  * Reads a manifest from the configured registry.
@@ -85,7 +85,7 @@ async function fetchPackageJson(
     return await fetch(`${registry}${pkg}/${version}`)
   } catch (error) {
     errorLog(
-      `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redactCredentials(registry))}: this lookup cannot send credentials`,
+      `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redact(registry))}: this lookup cannot send credentials`,
       getErrorMessage(error),
     )
     throw error
@@ -317,7 +317,7 @@ async function downloadDirectlyFromNPM(
   // have npm installed. Try downloading directly from npm as a last resort.
   const pathname = `${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   const url = `${registry}${pathname}`
-  errorLog(`Trying to download ${JSON.stringify(redactCredentials(url))}`)
+  errorLog(`Trying to download ${JSON.stringify(redact(url))}`)
   try {
     // No public registry fallback here: this writes an executable into the
     // project, so it must come from the registry the project configured.
@@ -327,7 +327,7 @@ async function downloadDirectlyFromNPM(
     )
   } catch (err) {
     errorLog(
-      `Failed to download ${JSON.stringify(redactCredentials(url))}`,
+      `Failed to download ${JSON.stringify(redact(url))}`,
       getErrorMessage(err),
     )
     throw err
