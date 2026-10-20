@@ -49,6 +49,22 @@ describe('movePath', () => {
     expect(fs.existsSync(from)).toBe(false)
   })
 
+  // `cpSync` merges, so a second install into a populated directory would leave
+  // a mixture of both trees instead of failing like the rename does
+  it('should not merge into a populated destination', () => {
+    const from = createSource()
+    const to = path.join(root, 'to')
+    fs.mkdirSync(to)
+    fs.writeFileSync(path.join(to, 'stale'), 'stale')
+    vi.spyOn(fs, 'renameSync').mockImplementation(() => {
+      throw Object.assign(new Error('cross-device link'), { code: 'EXDEV' })
+    })
+
+    expect(() => movePath(from, to)).toThrow('cross-device link')
+    expect(fs.readdirSync(to)).toEqual(['stale'])
+    expect(fs.existsSync(from)).toBe(true)
+  })
+
   // the binary fallback moves a single file
   it('should copy a file across filesystems', () => {
     const from = path.join(root, 'binary.node')

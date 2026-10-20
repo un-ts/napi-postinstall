@@ -273,9 +273,7 @@ function installUsingNPM(
             .join('/'),
           pkg,
         )
-        // the parent only: a populated destination would make the move merge the
-        // two trees instead of failing into the binary fallback below
-        fs.mkdirSync(path.dirname(newPath), { recursive: true })
+        fs.mkdirSync(newPath, { recursive: true })
         movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {

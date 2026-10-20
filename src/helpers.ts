@@ -141,10 +141,16 @@ export function movePath(from: string, to: string) {
     ) {
       throw error
     }
+    const isDir = fs.lstatSync(from).isDirectory()
+    // the copy merges into an existing directory while the rename above refuses
+    // a populated one, so surface that failure instead of mixing the two trees
+    if (isDir && fs.existsSync(to) && fs.readdirSync(to).length > 0) {
+      throw error
+    }
     // `verbatimSymlinks` keeps relative link targets pointing at the copied tree
     // instead of resolving them against the source we are about to remove
     fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true })
-    removeRecursive(from)
+    removeRecursive(from, isDir)
   }
 }
 
