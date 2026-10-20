@@ -89,6 +89,14 @@ describe('getProjectDir', () => {
     )
   })
 
+  // `C:` is drive-relative, so a path at the root of `node_modules` has to come
+  // back as the root itself
+  it('should return the filesystem root for a path that starts at node_modules', () => {
+    const start = path.resolve('/node_modules/pkg')
+
+    expect(getProjectDir(start)).toBe(path.parse(start).root)
+  })
+
   it('should fall back to the cwd outside node_modules', () => {
     const cwd = path.join(root, 'somewhere')
 

@@ -38,8 +38,11 @@ function stripNodeModules(dir: string) {
 export function getProjectDir(cwd = process.cwd()) {
   const localPrefix = process.env.npm_config_local_prefix
   const dir = path.resolve(localPrefix ?? cwd)
-  // a path that starts at `node_modules` strips down to nothing
-  return stripNodeModules(dir) || path.parse(dir).root
+  const root = path.parse(dir).root
+  const stripped = stripNodeModules(dir)
+  // a path that starts at `node_modules` strips down to nothing, or to `C:` on
+  // Windows, which is a drive-relative path rather than the root directory
+  return !stripped || stripped === root.slice(0, -1) ? root : stripped
 }
 
 /**
@@ -108,6 +111,11 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
   } catch {
     return DEFAULT_NPM_REGISTRY
   } finally {
+    try {
+      // the copied `.npmrc` may hold credentials, do not rely on the recursive
+      // removal succeeding
+      fs.unlinkSync(path.join(tempDir, NPMRC))
+    } catch {}
     try {
       removeRecursive(tempDir)
     } catch {}
