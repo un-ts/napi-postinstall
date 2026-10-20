@@ -8,4 +8,4 @@ The registry used by the JS API is resolved from the same config as well, includ
 
 Known limitation: the project directory is the one npm reports for the install, or the directory that owns the `node_modules` the package was installed into. Workspace roots are not derived, so an install that lands in a member's `node_modules` while the `.npmrc` only exists at the workspace root is not covered yet.
 
-Credentials mirrored into the temporary prefix are written with mode `0600` from the start and removed before the prefix is deleted, so a failed cleanup cannot leave an `_authToken` behind.
+Credentials mirrored into the temporary prefix are written with mode `0600` from the start, so the copy is never readable by other users; the prefix itself is created by `mkdtemp` and is `0700`.
