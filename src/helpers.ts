@@ -36,7 +36,13 @@ function stripNodeModules(dir: string) {
  * config is missing for an install inside a member's `node_modules`.
  */
 export function getProjectDir(cwd = process.cwd()) {
-  const localPrefix = process.env.npm_config_local_prefix
+  // A global install is configured by the global and user `.npmrc`, and its
+  // `npm_config_local_prefix` is the project the command happened to run in, so
+  // neither the config nor the temporary directory belong there.
+  const localPrefix =
+    process.env.npm_config_global === 'true'
+      ? undefined
+      : process.env.npm_config_local_prefix
   const dir = path.resolve(localPrefix ?? cwd)
   const root = path.parse(dir).root
   const stripped = stripNodeModules(dir)

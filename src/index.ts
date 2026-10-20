@@ -430,16 +430,6 @@ export async function checkAndPreparePackage(
 
   for (const target of targets) {
     const pkg = `${napi.packageName}-${target}`
-    // checked before either path, so a rejected spec cannot reach the install or
-    // the direct download
-    if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
-      throw new Error(
-        errorMessage(
-          `Refusing to install an unsafe package`,
-          `${pkg}@${version}`,
-        ),
-      )
-    }
     const isWasm32Wasi = target === WASM32_WASI
 
     if (
@@ -463,6 +453,17 @@ export async function checkAndPreparePackage(
         require.resolve(`${name}/${subpath}`)
         break
       } catch {}
+      // Only the fallbacks below need the values to be safe, and only they are
+      // reached when the binding is missing: an installed package keeps working
+      // even if its `optionalDependencies` uses a range.
+      if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
+        throw new Error(
+          errorMessage(
+            `Refusing to install an unsafe package`,
+            `${pkg}@${version}`,
+          ),
+        )
+      }
       if (isPnp()) {
         if (isWasm32Wasi) {
           try {
