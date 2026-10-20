@@ -6,7 +6,8 @@ import path from 'node:path'
 import fallback from 'napi-postinstall/fallback'
 import { vi } from 'vitest'
 
-vi.mock('node:child_process', () => ({
+vi.mock('node:child_process', async importOriginal => ({
+  ...(await importOriginal<typeof import('node:child_process')>()),
   execFileSync: vi.fn(),
 }))
 
@@ -27,7 +28,7 @@ describe('fallback CLI', () => {
           targets: ['x86_64-unknown-linux-gnu'],
         },
         optionalDependencies: {
-          '@fake/binding-x86_64-unknown-linux-gnu': '2.0.0',
+          '@fake/binding-linux-x64-gnu': '2.0.0',
         },
       }),
     )

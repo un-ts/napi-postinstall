@@ -6,6 +6,7 @@
     "types": ["node", "web"],
     "paths": {
       "napi-postinstall": ["./src/index.ts"],
+      "napi-postinstall/cli": ["./src/cli.ts"],
       "napi-postinstall/fallback": ["./src/fallback.ts"]
     },
     "target": "ES2020",

@@ -66,6 +66,7 @@ You usually don't need to install `napi-postinstall` yourself — it is a
 
 Prefer a `postinstall.js` that calls the API instead of invoking the
 `napi-postinstall` binary from `postinstall`; see [Postinstall script](#postinstall-script).
+
 If your package runs `napi-postinstall` in `postinstall`, you can copy this note
 into your own README:
 
@@ -94,8 +95,9 @@ bun add napi-postinstall
 
 ### Postinstall script
 
-Do not invoke the `napi-postinstall` binary directly from `postinstall`. With
-`npm --no-bin-links`, or isolated layouts, the bin shim may not exist
+Prefer a `postinstall.js` that calls the API over invoking the CLI directly
+from `postinstall`. With `npm --no-bin-links`, or isolated layouts, the bin shim
+may not exist
 ([unrs-resolver#190](https://github.com/unrs/unrs-resolver/issues/190)). Use a
 JavaScript file that calls the API instead:
 

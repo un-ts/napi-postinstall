@@ -2,11 +2,10 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { checkAndPreparePackage } from 'napi-postinstall'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { checkAndPreparePackage } from '../src/index.js'
-
-vi.mock('../src/index.js', () => ({
+vi.mock('napi-postinstall', () => ({
   checkAndPreparePackage: vi.fn(),
 }))
 
@@ -39,7 +38,7 @@ afterEach(() => {
 })
 
 async function loadCli() {
-  await import('../src/cli.js')
+  await import('napi-postinstall/cli')
   await new Promise(resolve => setImmediate(resolve))
 }
 
