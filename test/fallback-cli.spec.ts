@@ -26,6 +26,9 @@ describe('fallback CLI', () => {
           packageName: '@fake/binding',
           targets: ['x86_64-unknown-linux-gnu'],
         },
+        optionalDependencies: {
+          '@fake/binding-x86_64-unknown-linux-gnu': '2.0.0',
+        },
       }),
     )
     fs.writeFileSync(
@@ -35,11 +38,11 @@ describe('fallback CLI', () => {
 
     try {
       expect(
-        fallback<{ ok: boolean }>(path.join(pkgDir, 'package.json'), true),
+        fallback<{ ok: boolean }>(path.join(pkgDir, 'package.json')),
       ).toEqual({ ok: true })
       expect(execFileSync).toHaveBeenCalledWith(
         process.execPath,
-        [expect.stringMatching(/lib[\\/]cli\.js$/), 'fake-host', '1.0.0', '1'],
+        [expect.stringMatching(/lib[\\/]cli\.js$/), 'fake-host', '1.0.0', '0'],
         { cwd: pkgDir, stdio: 'inherit' },
       )
       expect(process.env.SKIP_FAKE_HOST_FALLBACK).toBe('1')
