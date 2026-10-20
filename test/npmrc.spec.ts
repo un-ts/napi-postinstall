@@ -67,7 +67,7 @@ describe('npmrc', () => {
     }
   })
 
-  it('should find the nearest npmrc in a monorepo', () => {
+  it('should find the nearest npmrc for a monorepo subpackage', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
     try {
       const nested = path.join(root, 'packages', 'pkg')
