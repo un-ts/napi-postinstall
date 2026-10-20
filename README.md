@@ -96,8 +96,7 @@ bun add napi-postinstall
 ### Postinstall script
 
 Prefer a `postinstall.js` that calls the API over invoking the CLI directly
-from `postinstall`. With `npm --no-bin-links`, or isolated layouts, the bin shim
-may not exist
+from `postinstall`. With `npm --no-bin-links`, the bin shim may not exist
 ([unrs-resolver#190](https://github.com/unrs/unrs-resolver/issues/190)). Use a
 JavaScript file that calls the API instead:
 
