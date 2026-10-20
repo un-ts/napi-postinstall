@@ -39,7 +39,6 @@ afterEach(() => {
 
 async function loadCli() {
   await import('napi-postinstall/cli')
-  await new Promise(resolve => setImmediate(resolve))
 }
 
 describe('cli', () => {
@@ -73,8 +72,8 @@ describe('cli', () => {
     process.argv = ['node', 'cli.js', 'fake-host', '1.0.0', '1']
 
     await loadCli()
+    await vi.waitFor(() => expect(process.exitCode).toBe(1))
 
     expect(consoleError).toHaveBeenCalledWith(error)
-    expect(process.exitCode).toBe(1)
   })
 })
