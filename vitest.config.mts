@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
+    globalSetup: ['./test/global-setup.mts'],
     coverage: {
       enabled: true,
       include: ['src'],

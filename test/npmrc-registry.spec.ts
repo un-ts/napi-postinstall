@@ -16,9 +16,6 @@ const TOKEN = 'napi-postinstall-registry-token'
 
 // `test/` -> repository root, the fixture runs against the built `lib/`.
 const REPO_ROOT = path.resolve(import.meta.dirname, '..')
-// the fixture installs a copy of the built package, so it needs `yarn build`
-// first; skip instead of failing a plain `yarn test` in a fresh checkout
-const LIB_INDEX = path.join(REPO_ROOT, 'lib', 'index.js')
 
 const write = (file: string, content: string) => {
   fs.mkdirSync(path.dirname(file), { recursive: true })
@@ -88,7 +85,7 @@ function createRegistry(
   })
 }
 
-describe.skipIf(!fs.existsSync(LIB_INDEX))('project npmrc', () => {
+describe('project npmrc', () => {
   // This deliberately runs a real `npm install`: what it asserts is that npm
   // itself reads the mirrored `.npmrc`, sends its token and resolves relative
   // values against the project directory, and a mocked child_process could only
