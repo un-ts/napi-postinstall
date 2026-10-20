@@ -2,7 +2,7 @@
 
 import fs from 'node:fs'
 
-import { PACKAGE_JSON } from './constants'
+import { PACKAGE_JSON, PACKAGE_JSON_ENV } from './constants'
 
 import { checkAndPreparePackage, PackageJson } from './index.js'
 
@@ -27,10 +27,17 @@ const packageName = process.argv[2]
 const packageVersion = process.argv[3]
 const checkVersion = ['1', 'check', 'true', 'yes'].includes(process.argv[4])
 
-const packageJson = readCwdPackage(packageName, packageVersion)
+const packageJsonPath = process.env[PACKAGE_JSON_ENV]
 
-if (packageJson) {
-  void checkAndPreparePackage(packageJson, checkVersion)
-} else {
-  void checkAndPreparePackage(packageName, packageVersion, checkVersion)
-}
+const packageJson = packageJsonPath
+  ? (require(packageJsonPath) as PackageJson)
+  : readCwdPackage(packageName, packageVersion)
+
+const promise = packageJson
+  ? checkAndPreparePackage(packageJson, checkVersion)
+  : checkAndPreparePackage(packageName, packageVersion, checkVersion)
+
+void promise.catch((err: unknown) => {
+  console.error(err)
+  process.exitCode = 1
+})

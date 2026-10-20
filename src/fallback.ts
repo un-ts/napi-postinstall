@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { WASM32_WASI } from './constants.js'
+import { PACKAGE_JSON_ENV, WASM32_WASI } from './constants.js'
 import {
   errorMessage,
   getNapiInfoFromPackageJson,
@@ -90,6 +90,10 @@ function fallback<T = unknown>(
     [cliPath, name, version, checkVersion ? '1' : '0'],
     {
       cwd: pkgDir,
+      env: {
+        ...process.env,
+        [PACKAGE_JSON_ENV]: packageJsonPath,
+      },
       stdio: 'inherit',
     },
   )

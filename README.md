@@ -131,6 +131,8 @@ declare function fallback<T = unknown>(
 export = fallback
 ```
 
+The installed CLI script is also exposed as `napi-postinstall/cli` for use by the runtime fallback.
+
 #### Example
 
 ```js
