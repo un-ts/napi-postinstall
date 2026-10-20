@@ -149,14 +149,8 @@ export function movePath(from: string, to: string) {
   }
 }
 
-/**
- * Removes a directory tree, or a single file or symlink when given one.
- */
-export function removeRecursive(dir: string) {
-  if (!fs.lstatSync(dir).isDirectory()) {
-    fs.unlinkSync(dir)
-    return
-  }
+/** Removes the tree below `dir`; every entry was already `lstat`ed by the caller. */
+function removeTree(dir: string) {
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
     let stats: fs.Stats
@@ -166,12 +160,23 @@ export function removeRecursive(dir: string) {
       continue // Guard against https://github.com/nodejs/node/issues/4760
     }
     if (stats.isDirectory()) {
-      removeRecursive(entryPath)
+      removeTree(entryPath)
     } else {
       fs.unlinkSync(entryPath)
     }
   }
   fs.rmdirSync(dir)
+}
+
+/**
+ * Removes a directory tree, or a single file or symlink when given one.
+ */
+export function removeRecursive(dir: string) {
+  if (fs.lstatSync(dir).isDirectory()) {
+    removeTree(dir)
+  } else {
+    fs.unlinkSync(dir)
+  }
 }
 
 export function downloadedNodePath(name: string, subpath: string) {
