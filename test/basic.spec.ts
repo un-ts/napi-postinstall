@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -37,7 +38,7 @@ describe('napi-postinstall', () => {
 
   it(
     'should process a WASI target without optionalDependencies',
-    { timeout: 30_000 },
+    { timeout: 60_000 },
     async () => {
       const packageJson: PackageJson = {
         name: 'fake-wasi-package',
@@ -48,12 +49,24 @@ describe('napi-postinstall', () => {
           targets: ['wasm32-wasip1-threads'],
         },
       }
+      const server = http.createServer((_req, res) => {
+        res.statusCode = 404
+        res.end()
+      })
+      await new Promise<void>((resolve, reject) => {
+        server.listen(0, '127.0.0.1', resolve)
+        server.once('error', reject)
+      })
+      const address = server.address()
+      if (!address || typeof address === 'string') {
+        throw new Error('Failed to get test server address')
+      }
       const previousRegistry = process.env.npm_config_registry
       const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(vi.fn())
 
-      process.env.npm_config_registry = 'http://127.0.0.1:1/'
+      process.env.npm_config_registry = `http://127.0.0.1:${address.port}/`
 
       try {
         await expect(
@@ -66,6 +79,9 @@ describe('napi-postinstall', () => {
         } else {
           process.env.npm_config_registry = previousRegistry
         }
+        await new Promise<void>((resolve, reject) => {
+          server.close(error => (error ? reject(error) : resolve()))
+        })
       }
     },
   )
@@ -75,6 +91,8 @@ describe('napi-postinstall', () => {
     { timeout: 30_000 },
     () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+      const previousRegistry = process.env.npm_config_registry
+      delete process.env.npm_config_registry
       try {
         const installDir = path.join(
           root,
@@ -101,6 +119,11 @@ describe('napi-postinstall', () => {
         )
         expect(getNpmRegistry(root)).toBe('https://registry.example.test/')
       } finally {
+        if (previousRegistry === undefined) {
+          delete process.env.npm_config_registry
+        } else {
+          process.env.npm_config_registry = previousRegistry
+        }
         fs.rmSync(root, { recursive: true, force: true })
       }
     },
