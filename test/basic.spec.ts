@@ -5,11 +5,7 @@ import path from 'node:path'
 import { checkAndPreparePackage } from 'napi-postinstall'
 import type { PackageJson } from 'napi-postinstall'
 
-import {
-  copyNpmrcTo,
-  getNpmRegistry,
-  hasWasiTarget,
-} from '../src/helpers.js'
+import { copyNpmrcTo, getNpmRegistry, hasWasiTarget } from '../src/helpers.js'
 
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
