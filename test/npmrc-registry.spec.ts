@@ -84,9 +84,17 @@ function createRegistry(
 }
 
 describe('project npmrc', () => {
+  // This deliberately runs a real `npm install`: what it asserts is that npm
+  // itself reads the mirrored `.npmrc`, sends its token and resolves relative
+  // values against the project directory, and a mocked child_process could only
+  // repeat our own assumptions back at us.
+  //
+  // The timeout is headroom for npm's start-up on a loaded CI runner (measured
+  // at ~43s on Windows, where the fixture installs run in parallel), not for the
+  // logic, which takes well under a second locally.
   it(
     'should install the binding from the registry configured in the project npmrc',
-    { timeout: 120_000 },
+    { timeout: 60_000 },
     async () => {
       const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
       const project = path.join(root, 'project')
