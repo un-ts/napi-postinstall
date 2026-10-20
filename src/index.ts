@@ -11,7 +11,6 @@ import {
   meta,
   NPM_PACKAGE_NAME,
   NPM_PINNED_VERSION,
-  NPMRC,
   PACKAGE_JSON,
   WASM32,
   WASM32_WASI,
@@ -285,11 +284,6 @@ function installUsingNPM(
     }
   } finally {
     try {
-      // Drop the mirrored credentials first: the recursive removal is known to
-      // fail on Windows with EBUSY, and the `.npmrc` may hold an `_authToken`.
-      try {
-        fs.unlinkSync(path.join(installDir, NPMRC))
-      } catch {}
       // Try to clean up afterward so we don't unnecessarily waste file system
       // space. Leaving nested "node_modules" directories can also be problematic
       // for certain tools that scan over the file tree and expect it to have a

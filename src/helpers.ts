@@ -120,11 +120,6 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
     return DEFAULT_NPM_REGISTRY
   } finally {
     try {
-      // the copied `.npmrc` may hold credentials, do not rely on the recursive
-      // removal succeeding
-      fs.unlinkSync(path.join(tempDir, NPMRC))
-    } catch {}
-    try {
       removeRecursive(tempDir, true)
     } catch {}
   }
