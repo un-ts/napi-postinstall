@@ -1,7 +1,16 @@
 import { checkAndPreparePackage } from 'napi-postinstall'
 import type { PackageJson } from 'napi-postinstall'
+import { vi } from 'vitest'
 
 import { hasWasiTarget } from '../src/helpers.js'
+
+// The WASI case below only has to reach the fallback; a real `npm install` and a
+// real registry lookup cost tens of seconds of npm start-up on a loaded Windows
+// runner, which is what made this test time out. Answer both with the same dead
+// registry instead, so nothing leaves the process.
+vi.mock('node:child_process', () => ({
+  execSync: vi.fn(() => 'http://127.0.0.1:1/'),
+}))
 
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
@@ -44,12 +53,9 @@ describe('napi-postinstall', () => {
           targets: ['wasm32-wasip1-threads'],
         },
       }
-      const previousRegistry = process.env.npm_config_registry
       const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(vi.fn())
-
-      process.env.npm_config_registry = 'http://127.0.0.1:1/'
 
       try {
         await expect(
@@ -57,11 +63,6 @@ describe('napi-postinstall', () => {
         ).rejects.toThrow('Failed to install package')
       } finally {
         consoleError.mockRestore()
-        if (previousRegistry === undefined) {
-          delete process.env.npm_config_registry
-        } else {
-          process.env.npm_config_registry = previousRegistry
-        }
       }
     },
   )
