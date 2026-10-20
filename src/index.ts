@@ -294,7 +294,7 @@ function installUsingNPM(
       // space. Leaving nested "node_modules" directories can also be problematic
       // for certain tools that scan over the file tree and expect it to have a
       // certain structure.
-      removeRecursive(installDir)
+      removeRecursive(installDir, true)
     } catch {
       // Removing a file or directory can randomly break on Windows, returning
       // EBUSY for an arbitrary length of time. I think this happens when some

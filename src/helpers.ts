@@ -125,7 +125,7 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
       fs.unlinkSync(path.join(tempDir, NPMRC))
     } catch {}
     try {
-      removeRecursive(tempDir)
+      removeRecursive(tempDir, true)
     } catch {}
   }
 }
@@ -149,8 +149,20 @@ export function movePath(from: string, to: string) {
   }
 }
 
-/** Removes the tree below `dir`; every entry was already `lstat`ed by the caller. */
-function removeTree(dir: string) {
+/**
+ * Removes `target`, which may be a file or a symlink.
+ *
+ * Pass `isDir` when the caller already knows, so the type is not looked up again;
+ * the recursive calls always do.
+ */
+export function removeRecursive(
+  dir: string,
+  isDir = fs.lstatSync(dir).isDirectory(),
+) {
+  if (!isDir) {
+    fs.unlinkSync(dir)
+    return
+  }
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
     let stats: fs.Stats
@@ -160,23 +172,12 @@ function removeTree(dir: string) {
       continue // Guard against https://github.com/nodejs/node/issues/4760
     }
     if (stats.isDirectory()) {
-      removeTree(entryPath)
+      removeRecursive(entryPath, true)
     } else {
       fs.unlinkSync(entryPath)
     }
   }
   fs.rmdirSync(dir)
-}
-
-/**
- * Removes a directory tree, or a single file or symlink when given one.
- */
-export function removeRecursive(dir: string) {
-  if (fs.lstatSync(dir).isDirectory()) {
-    removeTree(dir)
-  } else {
-    fs.unlinkSync(dir)
-  }
 }
 
 export function downloadedNodePath(name: string, subpath: string) {
