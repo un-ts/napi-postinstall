@@ -141,7 +141,9 @@ export function movePath(from: string, to: string) {
     ) {
       throw error
     }
-    fs.cpSync(from, to, { recursive: true })
+    // `verbatimSymlinks` keeps relative link targets pointing at the copied tree
+    // instead of resolving them against the source we are about to remove
+    fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true })
     removeRecursive(from)
   }
 }
