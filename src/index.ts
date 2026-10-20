@@ -10,6 +10,7 @@ import zlib from 'node:zlib'
 import {
   DEFAULT_NPM_REGISTRY,
   meta,
+  NPMRC,
   PACKAGE_JSON,
   WASM32,
   WASM32_WASI,
@@ -23,6 +24,7 @@ import {
   getNapiNativeTargets,
   getNpmRegistry,
   getProjectDir,
+  isShellSafeArgument,
   hasWasiTarget,
   prepareNpmPrefix,
   removeRecursive,
@@ -57,6 +59,9 @@ function fetch(url: string) {
   })
 }
 
+/** A registry URL can carry `user:pass`, keep it out of the logs. */
+const redactCredentials = (url: string) => url.replace(/\/\/[^/]+@/, '//***@')
+
 /**
  * Reads a manifest from the configured registry.
  *
@@ -76,7 +81,7 @@ async function fetchPackageJson(
   } catch (error) {
     if (registry !== DEFAULT_NPM_REGISTRY) {
       errorLog(
-        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(registry)}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
+        `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redactCredentials(registry))}, the registry configured in the project .npmrc, because this lookup cannot send credentials`,
         getErrorMessage(error),
       )
     }
@@ -187,7 +192,7 @@ function installUsingNPM(
     // ends up in a shell command, so reject anything else and fall back to
     // installing from the prefix itself instead of quoting it.
     const relativeInstallDir = path.relative(projectDir, installDir)
-    const fromProjectDir = /^[\w@./\\-]+$/.test(relativeInstallDir)
+    const fromProjectDir = isShellSafeArgument(relativeInstallDir)
     const prefixArg = fromProjectDir ? relativeInstallDir : '.'
     execSync(
       `npm install --prefix ${prefixArg} --loglevel=error --prefer-offline --no-audit --progress=false${
@@ -271,6 +276,11 @@ function installUsingNPM(
     }
   } finally {
     try {
+      // Drop the mirrored credentials first: the recursive removal is known to
+      // fail on Windows with EBUSY, and the `.npmrc` may hold an `_authToken`.
+      try {
+        fs.unlinkSync(path.join(installDir, NPMRC))
+      } catch {}
       // Try to clean up afterward so we don't unnecessarily waste file system
       // space. Leaving nested "node_modules" directories can also be problematic
       // for certain tools that scan over the file tree and expect it to have a
@@ -298,7 +308,7 @@ async function downloadDirectlyFromNPM(
   // have npm installed. Try downloading directly from npm as a last resort.
   const pathname = `${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
   const url = `${registry}${pathname}`
-  errorLog(`Trying to download ${JSON.stringify(url)}`)
+  errorLog(`Trying to download ${JSON.stringify(redactCredentials(url))}`)
   try {
     // No public registry fallback here: this writes an executable into the
     // project, so it must come from the registry the project configured.
@@ -307,7 +317,10 @@ async function downloadDirectlyFromNPM(
       extractFileFromTarGzip(await fetch(url), subpath),
     )
   } catch (err) {
-    errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))
+    errorLog(
+      `Failed to download ${JSON.stringify(redactCredentials(url))}`,
+      getErrorMessage(err),
+    )
     throw err
   }
 }

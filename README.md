@@ -53,7 +53,10 @@ You usually don't need to install `napi-postinstall` yourself — it is a
   `npm` can fail to install the correct platform-specific optional dependency.
 - When it has to install a missing binding by itself, it uses the registry,
   credentials and CA settings from the project `.npmrc`, so private registries
-  work without extra configuration.
+  work without extra configuration. In a `pnpm`/`yarn` workspace it reads the
+  `.npmrc` next to the package; if yours only exists at the workspace root, keep
+  the install at the root (or copy the file into the member) until workspace
+  config resolution is implemented.
 - `pnpm` and `yarn` resolve optional dependencies correctly in most cases, so
   the helper is usually a no-op there. Leaving install scripts enabled is the
   safe default.

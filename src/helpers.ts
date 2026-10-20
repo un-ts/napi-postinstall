@@ -37,7 +37,9 @@ function stripNodeModules(dir: string) {
  */
 export function getProjectDir(cwd = process.cwd()) {
   const localPrefix = process.env.npm_config_local_prefix
-  return stripNodeModules(path.resolve(localPrefix ?? cwd))
+  const dir = path.resolve(localPrefix ?? cwd)
+  // a path that starts at `node_modules` strips down to nothing
+  return stripNodeModules(dir) || path.parse(dir).root
 }
 
 /**
@@ -55,17 +57,29 @@ export function getProjectDir(cwd = process.cwd()) {
 export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
+  const npmrc = path.join(dir, NPMRC)
   try {
-    const npmrc = path.join(dir, NPMRC)
-    fs.copyFileSync(path.join(projectDir, NPMRC), npmrc)
-    fs.chmodSync(npmrc, 0o600)
+    // write instead of copying so the file is created with its final mode: a
+    // copy is readable before `chmod`, and a failed copy can leave an empty file
+    // behind, both of which matter because this file may hold `_authToken`
+    const content = fs.readFileSync(path.join(projectDir, NPMRC))
+    fs.writeFileSync(npmrc, content, { mode: 0o600 })
   } catch {
     // A missing or unreadable `.npmrc` is not fatal, npm falls back to its
-    // built-in defaults just like it does for the caller.
+    // built-in defaults just like it does for the caller, but never keep a
+    // partial copy around for the nested npm to read.
+    try {
+      fs.unlinkSync(npmrc)
+    } catch {}
   }
 }
 
 export function getNpmRegistry(projectDir = getProjectDir()) {
+  const projectNpmrc = path.join(projectDir, NPMRC)
+  // the caller configured a registry on purpose, so an unreadable one must not
+  // silently become the public default: the tarball download would then fetch an
+  // executable from a registry the project never asked for
+  const hasProjectConfig = fs.existsSync(projectNpmrc)
   let tempDir: string | undefined
   try {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
@@ -79,7 +93,16 @@ export function getNpmRegistry(projectDir = getProjectDir()) {
       return DEFAULT_NPM_REGISTRY
     }
     return registry.endsWith('/') ? registry : `${registry}/`
-  } catch {
+  } catch (error) {
+    if (hasProjectConfig) {
+      throw new Error(
+        errorMessage(
+          `Failed to read the registry from \`${projectNpmrc}\``,
+          getErrorMessage(error),
+        ),
+        { cause: error },
+      )
+    }
     return DEFAULT_NPM_REGISTRY
   } finally {
     if (tempDir) {
@@ -88,6 +111,20 @@ export function getNpmRegistry(projectDir = getProjectDir()) {
       } catch {}
     }
   }
+}
+
+/** Characters a shell would interpret, so such a path must not become an argument. */
+const SHELL_UNSAFE_CHARS = /[\s"'`$&|;<>()[\]{}*?!#~^%]/
+
+/**
+ * Whether `value` can be interpolated into a shell command as one argument.
+ *
+ * Used for the relative path of the temporary install directory, which is
+ * derived from the package location and can legitimately contain characters such
+ * as the `+` in a pnpm store name (`node_modules/.pnpm/@scope+pkg@1.0.0/...`).
+ */
+export function isShellSafeArgument(value: string) {
+  return !SHELL_UNSAFE_CHARS.test(value)
 }
 
 export function removeRecursive(dir: string) {

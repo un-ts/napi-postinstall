@@ -1,15 +1,22 @@
+import * as childProcess from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { afterAll, beforeAll } from 'vitest'
+import { beforeEach, vi } from 'vitest'
 
 import { DEFAULT_NPM_REGISTRY, NPMRC, PACKAGE_JSON } from '../src/constants.js'
 import {
   getNpmRegistry,
   getProjectDir,
+  isShellSafeArgument,
   prepareNpmPrefix,
 } from '../src/helpers.js'
+
+// npm's own behaviour is covered end to end by the registry acceptance test, so
+// the unit tests here only drive our parsing and failure handling: a real spawn
+// costs 37-65s on a loaded Windows runner.
+vi.mock('node:child_process', () => ({ execSync: vi.fn() }))
 
 const LOCAL_PREFIX = 'npm_config_local_prefix'
 const originalLocalPrefix = process.env[LOCAL_PREFIX]
@@ -142,67 +149,69 @@ describe('prepareNpmPrefix', () => {
   })
 })
 
-// Spawning npm from a unit test is slow on a loaded CI runner (the fixture
-// installs run in parallel), so only one case pays for it and the rest of the
-// contract is covered without it.
 describe('getNpmRegistry', () => {
-  const isolatedKeys = [
-    'npm_config_cache',
-    'npm_config_globalconfig',
-    'npm_config_update_notifier',
-    'npm_config_userconfig',
-  ] as const
-  const originalEnv = Object.fromEntries(
-    isolatedKeys.map(key => [key, process.env[key]]),
-  )
-  let isolatedDir: string
+  const execSync = vi.mocked(childProcess.execSync)
 
-  beforeAll(() => {
-    isolatedDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'napi-postinstall-npm-'),
-    )
-    const config = (name: string) => {
-      const file = path.join(isolatedDir, name)
-      write(file, '')
-      return file
-    }
-    process.env.npm_config_cache = path.join(isolatedDir, 'cache')
-    process.env.npm_config_globalconfig = config('global.npmrc')
-    process.env.npm_config_update_notifier = 'false'
-    process.env.npm_config_userconfig = config('user.npmrc')
+  beforeEach(() => {
+    execSync.mockReset()
   })
 
-  afterAll(() => {
-    for (const key of isolatedKeys) {
-      const value = originalEnv[key]
-      if (value === undefined) {
-        delete process.env[key]
-      } else {
-        process.env[key] = value
-      }
-    }
-    fs.rmSync(isolatedDir, { recursive: true, force: true })
+  it('should read the registry from the project npmrc', () => {
+    write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm')
+    execSync.mockReturnValue('http://127.0.0.1:1/npm\n')
+
+    // npm omits the trailing slash, it has to be added back
+    expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
+    expect(execSync).toHaveBeenCalledTimes(1)
   })
 
-  it(
-    'should read the registry from the project npmrc',
-    { timeout: 120_000 },
-    () => {
-      // npm omits the trailing slash, it has to be added back
-      write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm')
-
-      expect(getNpmRegistry(root)).toBe('http://127.0.0.1:1/npm/')
-    },
-  )
-
-  it('should fall back to the default registry when npm is unavailable', () => {
+  it('should fail instead of using the public registry when the project config is unreadable', () => {
     write(path.join(root, NPMRC), 'registry=http://127.0.0.1:1/npm/')
-    const originalPath = process.env.PATH
-    process.env.PATH = ''
-    try {
-      expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
-    } finally {
-      process.env.PATH = originalPath
+    execSync.mockImplementation(() => {
+      throw new Error('spawn npm ENOENT')
+    })
+
+    // falling back here would let the tarball download fetch from a registry the
+    // project never configured
+    expect(() => getNpmRegistry(root)).toThrow(
+      'Failed to read the registry from',
+    )
+  })
+
+  it('should fall back to the default registry without any project config', () => {
+    execSync.mockImplementation(() => {
+      throw new Error('spawn npm ENOENT')
+    })
+
+    expect(getNpmRegistry(root)).toBe(DEFAULT_NPM_REGISTRY)
+  })
+})
+
+describe('isShellSafeArgument', () => {
+  it('should accept the paths npm install directories actually have', () => {
+    expect(isShellSafeArgument('node_modules/@scope/host/npm-install')).toBe(
+      true,
+    )
+    expect(
+      isShellSafeArgument(
+        'node_modules/.pnpm/@scope+host@1.0.0/node_modules/@scope/host/npm-install',
+      ),
+    ).toBe(true)
+  })
+
+  it('should reject anything a shell would interpret', () => {
+    for (const value of [
+      'with space/npm-install',
+      '$(boom)/npm-install',
+      'a;rm -rf b',
+      'a|b',
+      'a&b',
+      'a`b`',
+      'a"b',
+      'a%b',
+      'a*b',
+    ]) {
+      expect(isShellSafeArgument(value)).toBe(false)
     }
   })
 })

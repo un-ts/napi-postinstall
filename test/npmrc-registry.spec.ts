@@ -67,6 +67,8 @@ function createRegistry(
   })
   const close = () =>
     new Promise<void>(resolve => {
+      // npm keeps connections alive, so `close()` alone would wait for them
+      server.closeAllConnections()
       server.close(() => resolve())
     })
   return new Promise<{
@@ -144,6 +146,9 @@ describe('project npmrc', () => {
               napi: {
                 binaryName: BINARY_NAME,
                 packageName: '@fake/binding',
+                // only used to resolve the binding version, which no
+                // `optionalDependencies` entry matches here, so the host version
+                // is used and the assertion stays platform independent
                 targets: ['x86_64-unknown-linux-gnu'],
               },
               optionalDependencies: { [bindingName]: VERSION },
