@@ -1,6 +1,7 @@
 // based on https://github.com/evanw/esbuild/blob/4475787eef4c4923b92b9fa37ebba1c88b9e1d9b/lib/npm/node-install.ts
 
 import { execSync } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
@@ -155,21 +156,16 @@ function installUsingNPM(
   // manifest, which npm validates for anything it publishes; keeping the directory
   // inside `node_modules` also keeps it on the same filesystem as the packages it
   // moves into place.
-  // both end up in the directory name and in the npm command
-  if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
-    throw new Error(
-      errorMessage(
-        `Refusing to install an unsafe package`,
-        `${pkg}@${version}`,
-      ),
-    )
-  }
   const installDir = path.join(
     projectDir,
     'node_modules',
     '.napi-postinstall',
     pkg,
     version,
+    // the same host version can exist as several nested copies (A and B both get
+    // their own nested `unrs-resolver`), and each copy runs this postinstall, so
+    // the directory has to be unique per attempt
+    randomBytes(4).toString('hex'),
   )
   try {
     fs.mkdirSync(installDir, { recursive: true })
@@ -432,6 +428,16 @@ export async function checkAndPreparePackage(
 
   for (const target of targets) {
     const pkg = `${napi.packageName}-${target}`
+    // checked before either path, so a rejected spec cannot reach the install or
+    // the direct download
+    if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
+      throw new Error(
+        errorMessage(
+          `Refusing to install an unsafe package`,
+          `${pkg}@${version}`,
+        ),
+      )
+    }
     const isWasm32Wasi = target === WASM32_WASI
 
     if (
