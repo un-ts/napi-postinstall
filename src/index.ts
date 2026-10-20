@@ -16,6 +16,7 @@ import {
   getNapiInfoFromPackageJson,
   getNapiNativeTargets,
   getNpmRegistry,
+  getProjectDir,
   hasWasiTarget,
   prepareNpmPrefix,
   removeRecursive,
@@ -129,10 +130,11 @@ function installUsingNPM(
 
     // The temporary directory gets its own empty `package.json`, so npm treats
     // it as the project root: that avoids the caller's `devEngines` (#70). The
-    // project `.npmrc` is mirrored there too, because npm only reads
+    // project `.npmrc` is copied there too, because npm only reads
     // `<prefix>/.npmrc` and a nested install would otherwise lose the registry
     // and its credentials (#37, #43).
-    prepareNpmPrefix(installDir)
+    const projectDir = getProjectDir()
+    prepareNpmPrefix(installDir, projectDir)
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"
@@ -143,11 +145,15 @@ function installUsingNPM(
     // Use the temporary directory as the prefix so npm reads its empty
     // package.json instead of the caller's one. Otherwise npm 11 can fail with
     // EBADDEVENGINES when the caller declares another devEngines.packageManager.
+    //
+    // Run it from the project directory: npm resolves relative values in
+    // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
+    // them pointing at the project rather than at the temporary prefix.
     execSync(
-      `npm install --prefix . --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix "${path.relative(projectDir, installDir)}" --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
-      { cwd: installDir, stdio: 'pipe', env },
+      { cwd: projectDir, stdio: 'pipe', env },
     )
 
     // Remove the unused "package.json" file

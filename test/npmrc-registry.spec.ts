@@ -157,11 +157,15 @@ describe('project npmrc', () => {
             path.join(napiPostinstall, PACKAGE_JSON),
           )
 
+          // `cache` is a relative path, so npm only puts it in the project
+          // directory when the nested install resolves `.npmrc` values against
+          // the project instead of against its temporary prefix
           write(
             path.join(project, NPMRC),
             [
               `registry=${registry.url}/`,
               `//${registry.host}/:_authToken=${TOKEN}`,
+              'cache=./npm-cache',
               '',
             ].join('\n'),
           )
@@ -175,7 +179,6 @@ describe('project npmrc', () => {
           delete env.npm_config_local_prefix
           delete env.npm_config_registry
           Object.assign(env, {
-            npm_config_cache: path.join(root, 'npm-cache'),
             npm_config_update_notifier: 'false',
             // fail fast instead of retrying when the auth setup is wrong
             npm_config_fetch_retries: '0',
@@ -217,6 +220,8 @@ describe('project npmrc', () => {
             ),
           ).toEqual([])
           expect(registry.hits.some(hit => hit.url.endsWith('.tgz'))).toBe(true)
+          // relative `.npmrc` values are resolved against the project directory
+          expect(fs.existsSync(path.join(project, 'npm-cache'))).toBe(true)
         } finally {
           await registry.close()
         }

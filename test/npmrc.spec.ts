@@ -112,33 +112,21 @@ describe('prepareNpmPrefix', () => {
     expect(read(path.join(prefix, NPMRC))).toBe(npmrc)
   })
 
-  // npm resolves these against the prefix, which is a temporary directory now.
-  it('should absolutize the path values that npm resolves against the prefix', () => {
-    write(
-      path.join(root, NPMRC),
-      [
-        'registry=https://registry.example.test/',
-        'cafile=./certs/ca.pem',
-        'certfile="certs/ca2.pem"',
-        'cache=~/.npm-cache',
-        'keyfile=/etc/ssl/key.pem',
-        'prefix=' + String.raw`C:\certs`,
-        'globalconfig=${NPM_GLOBAL_CONFIG}',
-      ].join('\n'),
-    )
+  // npm resolves relative values in `.npmrc` against its cwd, so the copy stays
+  // byte for byte identical; the nested install runs from the project directory.
+  it('should copy the file verbatim, path values included', () => {
+    const npmrc = [
+      'registry=https://registry.example.test/',
+      'cafile=./certs/ca.pem',
+      'certfile="certs/ca2.pem"',
+      '',
+    ].join('\n')
+    write(path.join(root, NPMRC), npmrc)
 
     const prefix = path.join(root, 'npm-install')
     prepareNpmPrefix(prefix, root)
 
-    expect(read(path.join(prefix, NPMRC)).split('\n')).toEqual([
-      'registry=https://registry.example.test/',
-      `cafile=${path.join(root, 'certs', 'ca.pem')}`,
-      `certfile="${path.join(root, 'certs', 'ca2.pem')}"`,
-      'cache=~/.npm-cache',
-      'keyfile=/etc/ssl/key.pem',
-      'prefix=' + String.raw`C:\certs`,
-      'globalconfig=${NPM_GLOBAL_CONFIG}',
-    ])
+    expect(read(path.join(prefix, NPMRC))).toBe(npmrc)
   })
 
   it('should not fail without a project npmrc', () => {

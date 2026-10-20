@@ -16,19 +16,6 @@ import type { NapiInfo, PackageJson, Platform } from './types.js'
 const NODE_MODULES_SEGMENT = /[\\/]node_modules[\\/]/
 const PNPM_WORKSPACE = 'pnpm-workspace.yaml'
 
-/** `.npmrc` keys holding a filesystem path, which npm resolves relative to the prefix. */
-const NPMRC_PATH_KEYS = new Set([
-  'cache',
-  'cafile',
-  'certfile',
-  'globalconfig',
-  'keyfile',
-  'logs-dir',
-  'prefix',
-  'tmp',
-  'userconfig',
-])
-
 function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
   return index === -1 ? dir : dir.slice(0, index)
@@ -84,52 +71,14 @@ export function getProjectDir(cwd = process.cwd()) {
   return findWorkspaceRoot(stripNodeModules(path.resolve(cwd)))
 }
 
-function isRelativePath(value: string) {
-  return !(
-    value.startsWith('/') ||
-    value.startsWith('\\') ||
-    value.startsWith('~') ||
-    value.includes('$') ||
-    /^[a-z]:/i.test(value) ||
-    /^[a-z][\w+.-]*:\/\//i.test(value)
-  )
-}
-
-/**
- * npm resolves relative path values against the prefix, so mirroring `.npmrc`
- * into a temporary prefix would otherwise point `cafile`, `cache`, ... at the
- * wrong directory.
- */
-function absolutizeNpmrc(content: string, projectDir: string) {
-  return content
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/)
-    .map(line => {
-      const separator = line.indexOf('=')
-      if (separator === -1) {
-        return line
-      }
-      const key = line.slice(0, separator).trim()
-      if (!NPMRC_PATH_KEYS.has(key.toLowerCase())) {
-        return line
-      }
-      const rawValue = line.slice(separator + 1).trim()
-      const quoted = /^(['"]).*\1$/.test(rawValue)
-      const value = quoted ? rawValue.slice(1, -1) : rawValue
-      if (!value || !isRelativePath(value)) {
-        return line
-      }
-      const resolved = path.resolve(projectDir, value)
-      const nextValue = quoted ? `"${resolved}"` : resolved
-      return `${key}=${nextValue}`
-    })
-    .join('\n')
-}
-
 /**
  * Prepares `dir` to be used as an npm prefix for a nested install: an empty
- * `package.json` so npm does not apply the caller's `devEngines`, and a mirror of
+ * `package.json` so npm does not apply the caller's `devEngines`, and a copy of
  * the project `.npmrc` so the install keeps its registry and credentials.
+ *
+ * npm reads project config from the prefix but resolves relative values in it
+ * against its cwd, so the caller has to run npm from the project directory for
+ * settings like `cafile=./certs/ca.pem` to keep pointing at the project.
  *
  * @see https://github.com/un-ts/napi-postinstall/issues/37
  * @see https://github.com/un-ts/napi-postinstall/issues/43
@@ -138,14 +87,9 @@ export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
   fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
   try {
-    fs.writeFileSync(
-      path.join(dir, NPMRC),
-      absolutizeNpmrc(
-        fs.readFileSync(path.join(projectDir, NPMRC), 'utf8'),
-        projectDir,
-      ),
-      { mode: 0o600 },
-    )
+    const npmrc = path.join(dir, NPMRC)
+    fs.copyFileSync(path.join(projectDir, NPMRC), npmrc)
+    fs.chmodSync(npmrc, 0o600)
   } catch {
     // A missing or unreadable `.npmrc` is not fatal, npm falls back to its
     // built-in defaults just like it does for the caller.
