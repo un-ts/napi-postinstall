@@ -15,17 +15,14 @@ import type { PackageJson } from './types.js'
  * Fallback for webcontainer and docker environments like
  * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  *
- * @param packageJsonOrPath The package.json object or absolute path to it.
+ * @param packageJsonPath The absolute path to the package.json file.
  * @param checkVersion Whether to check version matching
  */
 function fallback<T = unknown>(
-  packageJsonOrPath: PackageJson | string,
+  packageJsonPath: string,
   checkVersion?: boolean,
 ): T {
-  const packageJson =
-    typeof packageJsonOrPath === 'string'
-      ? (require(packageJsonOrPath) as PackageJson)
-      : packageJsonOrPath
+  const packageJson = require(packageJsonPath) as PackageJson
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
 
@@ -86,10 +83,7 @@ function fallback<T = unknown>(
 
   const cliPath = require.resolve('napi-postinstall/cli')
 
-  const pkgDir =
-    typeof packageJsonOrPath === 'string'
-      ? path.dirname(packageJsonOrPath)
-      : path.dirname(require.resolve(`${name}/package.json`))
+  const pkgDir = path.dirname(packageJsonPath)
 
   execFileSync(
     process.execPath,

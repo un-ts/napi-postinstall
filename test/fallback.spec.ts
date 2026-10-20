@@ -3,7 +3,6 @@ import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
-import type { PackageJson } from 'napi-postinstall'
 import fallback from 'napi-postinstall/fallback'
 import unrsResolver from 'unrs-resolver'
 
@@ -19,12 +18,6 @@ describe.skipIf(process.platform === 'win32')('fallback', () => {
     expect(fallback(require.resolve('unrs-resolver/package.json'))).toBe(
       unrsResolver,
     )
-    expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBe('1')
-  })
-
-  it('should accept a packageJson object', () => {
-    const packageJson = require('unrs-resolver/package.json') as PackageJson
-    expect(fallback(packageJson)).toBe(unrsResolver)
     expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBe('1')
   })
 
