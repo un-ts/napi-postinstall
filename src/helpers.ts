@@ -145,7 +145,12 @@ export function movePath(from: string, to: string) {
       throw error
     }
     fs.cpSync(from, to, { recursive: true })
-    removeRecursive(from)
+    // the source can be a single file, e.g. when only the binary is moved
+    if (fs.lstatSync(from).isDirectory()) {
+      removeRecursive(from)
+    } else {
+      fs.unlinkSync(from)
+    }
   }
 }
 

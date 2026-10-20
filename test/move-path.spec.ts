@@ -49,6 +49,21 @@ describe('movePath', () => {
     expect(fs.existsSync(from)).toBe(false)
   })
 
+  // the binary fallback moves a single file
+  it('should copy a file across filesystems', () => {
+    const from = path.join(root, 'binary.node')
+    const to = path.join(root, 'moved.node')
+    fs.writeFileSync(from, 'binary')
+    vi.spyOn(fs, 'renameSync').mockImplementation(() => {
+      throw Object.assign(new Error('cross-device link'), { code: 'EXDEV' })
+    })
+
+    movePath(from, to)
+
+    expect(fs.readFileSync(to, 'utf8')).toBe('binary')
+    expect(fs.existsSync(from)).toBe(false)
+  })
+
   it('should rethrow anything else', () => {
     const from = createSource()
     vi.spyOn(fs, 'renameSync').mockImplementation(() => {
