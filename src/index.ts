@@ -67,9 +67,9 @@ function fetch(url: string) {
  * never be resolved to a public one.
  */
 async function fetchPackageJson(
+  registry: string,
   pkg: string,
   version: string,
-  registry: string,
 ) {
   try {
     return await fetch(`${registry}${pkg}/${version}`)
@@ -347,9 +347,9 @@ export async function checkAndPreparePackage(
       }
       const pkg = packageNameOrPackageJson
       const packageJsonBuffer = await fetchPackageJson(
+        getRegistry(),
         pkg,
         versionOrCheckVersion,
-        getRegistry(),
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),
