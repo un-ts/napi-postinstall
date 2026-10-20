@@ -1,7 +1,6 @@
 // based on https://github.com/evanw/esbuild/blob/4475787eef4c4923b92b9fa37ebba1c88b9e1d9b/lib/npm/node-install.ts
 
 import { execSync } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
@@ -156,19 +155,22 @@ function installUsingNPM(
   // manifest, which npm validates for anything it publishes; keeping the directory
   // inside `node_modules` also keeps it on the same filesystem as the packages it
   // moves into place.
-  const installDir = path.join(
+  const installParent = path.join(
     projectDir,
     'node_modules',
     '.napi-postinstall',
     pkg,
-    version,
-    // the same host version can exist as several nested copies (A and B both get
-    // their own nested `unrs-resolver`), and each copy runs this postinstall, so
-    // the directory has to be unique per attempt
-    randomBytes(4).toString('hex'),
   )
+  let installDir: string
   try {
-    fs.mkdirSync(installDir, { recursive: true })
+    fs.mkdirSync(installParent, { recursive: true })
+    // The same host version can exist as several nested copies — A and B both
+    // depend on the same `unrs-resolver` while C forces another version, so each
+    // of A and B gets its own copy — and each copy runs this postinstall against
+    // the same project and the same `binding@version`. `mkdtemp` is atomic, so
+    // those attempts can never share the mirrored `.npmrc`, the empty
+    // `package.json` or the temporary `node_modules`.
+    installDir = fs.mkdtempSync(path.join(installParent, `${version}-`))
   } catch (err) {
     const error = err as NodeJS.ErrnoException
     if (error.code === 'EROFS') {
