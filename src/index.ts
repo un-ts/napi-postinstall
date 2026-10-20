@@ -373,10 +373,19 @@ export async function checkAndPreparePackage(
   checkVersion?: boolean,
 ) {
   let packageJson: PackageJson
-  let npmRegistry: string | undefined
-  // memoised per check: the registry depends on the package scope, which never
-  // changes within one call
-  const getRegistry = (pkg: string) => (npmRegistry ??= getNpmRegistry(pkg))
+  // The registry depends on the package scope, and this is called with both the
+  // host package and the scoped binding package, so cache per scope rather than
+  // once per call.
+  const registries = new Map<string, string>()
+  const getRegistry = (pkg: string) => {
+    const scope = pkg.startsWith('@') ? pkg.split('/')[0] : ''
+    let registry = registries.get(scope)
+    if (registry === undefined) {
+      registry = getNpmRegistry(pkg)
+      registries.set(scope, registry)
+    }
+    return registry
+  }
 
   if (typeof packageNameOrPackageJson === 'string') {
     try {
