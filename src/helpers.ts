@@ -21,13 +21,9 @@ function getProjectDir() {
 }
 
 export function getNpmRegistry(cwd = getProjectDir()) {
-  let tempDir: string
+  let tempDir: string | undefined
   try {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
-  } catch {
-    return DEFAULT_NPM_REGISTRY
-  }
-  try {
     copyNpmrcTo(tempDir, cwd)
     fs.writeFileSync(path.join(tempDir, PACKAGE_JSON), '{}')
     const registry = execSync('npm config get registry', {
@@ -39,15 +35,32 @@ export function getNpmRegistry(cwd = getProjectDir()) {
   } catch {
     return DEFAULT_NPM_REGISTRY
   } finally {
-    try {
-      removeRecursive(tempDir)
-    } catch {}
+    if (tempDir) {
+      try {
+        removeRecursive(tempDir)
+      } catch {}
+    }
+  }
+}
+
+function findNpmrc(start: string) {
+  const dir = path.resolve(start)
+  const npmrc = path.join(dir, '.npmrc')
+  if (fs.existsSync(npmrc)) {
+    return npmrc
+  }
+  const parent = path.dirname(dir)
+  if (parent !== dir) {
+    return findNpmrc(parent)
   }
 }
 
 export function copyNpmrcTo(dir: string, cwd = getProjectDir()) {
   try {
-    fs.copyFileSync(path.join(cwd, '.npmrc'), path.join(dir, '.npmrc'))
+    const npmrc = findNpmrc(cwd)
+    if (npmrc) {
+      fs.copyFileSync(npmrc, path.join(dir, '.npmrc'))
+    }
   } catch {}
 }
 

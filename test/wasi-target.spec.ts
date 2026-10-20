@@ -8,21 +8,6 @@ vi.mock('node:child_process', () => ({
   }),
 }))
 
-vi.mock('node:http', () => ({
-  default: {
-    get: (
-      _url: string,
-      callback: (response: {
-        statusCode: number
-        headers: Record<string, string>
-      }) => void,
-    ) => {
-      callback({ statusCode: 404, headers: {} })
-      return { on: vi.fn() }
-    },
-  },
-}))
-
 vi.mock('node:https', () => ({
   default: {
     get: (
