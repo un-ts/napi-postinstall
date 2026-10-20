@@ -150,17 +150,14 @@ function installUsingNPM(
 
   const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
   const projectDir = getProjectDir()
-  // npm has to run from the project directory (see below), so this relative path
-  // becomes the `--prefix` argument. Both segments come from the dependency's own
-  // manifest, which npm validates for anything it publishes; keeping the directory
-  // inside `node_modules` also keeps it on the same filesystem as the packages it
-  // moves into place.
-  // Anchored at the project directory, which is also npm's cwd below: the
-  // `--prefix` argument is `path.relative(projectDir, installDir)`, so keeping
-  // the directory under a path we know gives that argument a fixed shape. The
-  // package itself may live elsewhere (a global install runs the hook from the
-  // package source), which would otherwise leak its directory name into the
-  // command.
+  // npm runs from the project directory (see below), so `path.relative(projectDir,
+  // installDir)` becomes the `--prefix` argument: anchoring the temporary
+  // directory here keeps that argument to
+  // `node_modules/.napi-postinstall/<pkg>/<version>-XXXXXX` in every layout. The
+  // package itself may live elsewhere — a global install runs the hook from the
+  // package source — which would otherwise leak its directory name into the
+  // command. Staying inside `node_modules` also keeps the directory on the same
+  // filesystem as the packages it moves into place.
   const projectNodeModules = path.join(projectDir, 'node_modules')
   const installParent = path.join(projectNodeModules, '.napi-postinstall', pkg)
   let installDir: string
