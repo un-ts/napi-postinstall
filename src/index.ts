@@ -16,6 +16,7 @@ import {
   getGlobalNpmRegistry,
   getNapiInfoFromPackageJson,
   getNapiNativeTargets,
+  hasWasiTarget,
   removeRecursive,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
@@ -319,12 +320,14 @@ export async function checkAndPreparePackage(
 
   for (const target of targets) {
     const pkg = `${napi.packageName}-${target}`
+    const isWasm32Wasi = target === WASM32_WASI
 
-    if (!optionalDependencies?.[pkg]) {
+    if (
+      !optionalDependencies?.[pkg] &&
+      !(isWasm32Wasi && hasWasiTarget(napi.targets))
+    ) {
       continue
     }
-
-    const isWasm32Wasi = target === WASM32_WASI
 
     const binaryPrefix = napi.binaryName ? `${napi.binaryName}.` : ''
     const subpath = `${binaryPrefix}${target}.${isWasm32Wasi ? 'wasm' : 'node'}`

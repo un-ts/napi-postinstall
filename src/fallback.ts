@@ -4,8 +4,11 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { WASM32_WASI } from './constants.js'
-import { errorMessage, getNapiInfoFromPackageJson } from './helpers.js'
-import { parseTriple } from './target.js'
+import {
+  errorMessage,
+  getNapiInfoFromPackageJson,
+  hasWasiTarget,
+} from './helpers.js'
 import type { PackageJson } from './types.js'
 
 const EXECUTORS = {
@@ -66,9 +69,7 @@ function fallback<T = unknown>(
     // the only target, so also accept the configured `napi.targets`.
     if (
       !optionalDependencies?.[bindingPkgName] &&
-      !napi.targets?.some(
-        target => parseTriple(target).platformArchABI === WASM32_WASI,
-      )
+      !hasWasiTarget(napi.targets)
     ) {
       throw new Error(
         errorMessage(
