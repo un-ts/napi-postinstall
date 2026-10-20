@@ -217,7 +217,12 @@ describe('install arguments', () => {
     ]) {
       expect(NPM_PACKAGE_NAME.test(pkg)).toBe(true)
     }
-    for (const version of ['1.12.2', '1.0.0-beta.1+build', '0.3.5']) {
+    for (const version of [
+      '1.12.2',
+      '1.0.0-beta.1+build',
+      '0.3.5',
+      '0.0.0-development',
+    ]) {
       expect(NPM_PINNED_VERSION.test(version)).toBe(true)
     }
   })
@@ -228,7 +233,16 @@ describe('install arguments', () => {
     for (const pkg of ['..', '../x', '.hidden', '_hidden', 'a;b', '$(id)']) {
       expect(NPM_PACKAGE_NAME.test(pkg)).toBe(false)
     }
-    for (const version of ['.', '..', '../x', '1.0.0; rm -rf /', '*']) {
+    for (const version of [
+      '.',
+      '..',
+      '../x',
+      '1.0.0; rm -rf /',
+      '*',
+      'latest',
+      '1.2',
+      '1.0.0...',
+    ]) {
       expect(NPM_PINNED_VERSION.test(version)).toBe(false)
     }
   })

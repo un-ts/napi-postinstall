@@ -27,8 +27,10 @@ export const NPMRC = '.npmrc'
  * directory and in the npm command. Both come from the dependency's own manifest
  * (`napi.packageName` and the matching `optionalDependencies` value), which npm
  * never validates, so they are checked here: a leading `.`/`_` is not a valid npm
- * name, and `.`/`..` as a whole version would walk out of the intended directory.
+ * name, and the version has to be the exact semver napi-rs pins (a dist-tag or a
+ * `..` would otherwise end up in the install path).
  */
 export const NPM_PACKAGE_NAME = /^(?:@[a-z0-9-][\w.-]*\/)?[a-z0-9-][\w.-]*$/i
 
-export const NPM_PINNED_VERSION = /^(?!\.\.?$)[\w.+-]+$/
+export const NPM_PINNED_VERSION =
+  /^\d+\.\d+\.\d+(?:-[\da-z.-]+)?(?:\+[\da-z.-]+)?$/i
