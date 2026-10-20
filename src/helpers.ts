@@ -15,7 +15,7 @@ import type { NapiInfo, PackageJson, Platform } from './types.js'
 
 const NODE_MODULES_SEGMENT = /([\\/])node_modules\1/
 
-function stripNodeModules(dir: string) {
+export function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
   return index === -1 ? dir : dir.slice(0, index)
 }
@@ -36,15 +36,7 @@ function stripNodeModules(dir: string) {
  * config is missing for an install inside a member's `node_modules`.
  */
 export function getProjectDir(cwd = process.cwd()) {
-  // A global install is configured by the global and user `.npmrc`, and its
-  // `npm_config_local_prefix` is the project the command happened to run in, so
-  // neither the config nor the temporary directory belong there.
-  const isGlobalInstall = ['1', 'true'].includes(
-    process.env.npm_config_global ?? '',
-  )
-  const localPrefix = isGlobalInstall
-    ? undefined
-    : process.env.npm_config_local_prefix
+  const localPrefix = process.env.npm_config_local_prefix
   const dir = path.resolve(localPrefix ?? cwd)
   const root = path.parse(dir).root
   const stripped = stripNodeModules(dir)

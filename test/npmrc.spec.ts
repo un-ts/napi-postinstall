@@ -103,20 +103,18 @@ describe('getProjectDir', () => {
     expect(getProjectDir(start)).toBe(path.parse(start).root)
   })
 
-  // npm_config_local_prefix is the project the command ran in, not the package
-  // being installed, so a global install must not use it
-  it('should ignore the local prefix during a global install', () => {
-    const pkgDir = path.join(root, 'node_modules', 'host')
-    write(path.join(pkgDir, PACKAGE_JSON), '{}')
-    process.env[LOCAL_PREFIX] = path.join(root, 'invoking-project')
+  // a global install runs the hook with cwd set to the package source, and npm
+  // reports the global prefix as the local prefix
+  it('should use the prefix exported by npm even for a global install', () => {
+    const globalPrefix = path.join(root, 'global-prefix')
+    const sourceDir = path.join(root, 'package-source')
+    process.env[LOCAL_PREFIX] = globalPrefix
+    process.env.npm_config_global = 'true'
 
-    for (const value of ['true', '1']) {
-      process.env.npm_config_global = value
-      try {
-        expect(getProjectDir(pkgDir)).toBe(root)
-      } finally {
-        delete process.env.npm_config_global
-      }
+    try {
+      expect(getProjectDir(sourceDir)).toBe(globalPrefix)
+    } finally {
+      delete process.env.npm_config_global
     }
   })
 
