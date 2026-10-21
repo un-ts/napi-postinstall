@@ -17,7 +17,8 @@ const write = (file: string, content: string) => {
   fs.writeFileSync(file, content)
 }
 
-// a directory symlink, which Windows only allows as a junction
+// a directory symlink; Windows allows one only with the privilege, so fall back to
+// a junction there, which does not need it
 const link = (target: string, linkPath: string) => {
   fs.mkdirSync(path.dirname(linkPath), { recursive: true })
   fs.symlinkSync(
@@ -39,6 +40,7 @@ describe('pnpm-style layout', () => {
     const store = path.join(root, 'b')
     const hostDir = path.join(consumer, 'node_modules', HOST)
     const cwd = process.cwd()
+    const registry = process.env.npm_config_registry
     const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn())
 
     try {
@@ -82,21 +84,29 @@ describe('pnpm-style layout', () => {
       )
 
       process.chdir(hostDir)
-      // no registry and no npm: the only way through is resolving the installed
-      // binding, which is what an offline build sandbox relies on
+      // the registry points at a closed port, so a regression fails fast instead
+      // of reaching the public one, like the offline sandbox in the issue
+      process.env.npm_config_registry = 'http://127.0.0.1:1/'
       await expect(
         checkAndPreparePackage(HOST, VERSION),
       ).resolves.toBeUndefined()
 
       expect(consoleError).not.toHaveBeenCalled()
-      // a nested install would land in this prefix, and a download in the host
-      // itself; neither may exist, since the installed binding was enough
+      // neither fallback may have run: the nested install would use this prefix
+      // and grow a `node_modules` inside the host, the download would write the
+      // binary into the host package itself
       expect(
         fs.existsSync(path.join(consumer, 'node_modules', '.napi-postinstall')),
       ).toBe(false)
       expect(fs.existsSync(path.join(hostDir, 'node_modules'))).toBe(false)
+      expect(fs.existsSync(path.join(hostDir, subpath))).toBe(false)
     } finally {
       process.chdir(cwd)
+      if (registry === undefined) {
+        delete process.env.npm_config_registry
+      } else {
+        process.env.npm_config_registry = registry
+      }
       consoleError.mockRestore()
       fs.rmSync(root, { recursive: true, force: true })
     }

@@ -193,12 +193,15 @@ export function removeRecursive(
 /**
  * Resolves `specifier` from the package the postinstall belongs to.
  *
- * This package is only ever run as a lifecycle script of the package needing the
- * binding, and npm, pnpm and yarn all run those with the cwd set to that package,
- * whose `node_modules` is the one the binding was installed into. Resolving from
- * our own location instead fails with a pnpm-style layout and `hoist=false`, where
- * the binding is a sibling of the host while this package can be linked from a
- * different tree.
+ * That is the package needing the binding: npm, pnpm and yarn all run a lifecycle
+ * script with the cwd set to it, and its `node_modules` is the one the binding was
+ * installed into. Resolving from our own location instead fails with a pnpm-style
+ * layout and `hoist=false`, where the binding is a sibling of the host while this
+ * package can be linked from a different tree.
+ *
+ * `checkAndPreparePackage` and the CLI are public, so a caller that runs from
+ * somewhere else has to cd into that package first; the own-location lookup is not
+ * kept as a fallback, since it can only succeed when both agree anyway.
  *
  * @see https://github.com/un-ts/napi-postinstall/issues/53
  */
