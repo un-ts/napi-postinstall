@@ -223,36 +223,38 @@ function installUsingNPM(
       if (isWasm32Wasi) {
         const newNodeModulesDir = path.join(pkgDir, 'node_modules')
         fs.mkdirSync(newNodeModulesDir, { recursive: true })
-        const dirs = fs.readdirSync(nodeModulesDir)
-        for (const dir of dirs) {
+        // A dependency the host package already ships is a normal outcome, so
+        // only report a move that left nothing behind.
+        const moveOptional = (from: string, to: string) => {
+          try {
+            movePath(from, to)
+          } catch (error) {
+            if (!fs.existsSync(to)) {
+              errorLog(
+                `Failed to move ${JSON.stringify(to)} into place`,
+                getErrorMessage(error),
+              )
+            }
+          }
+        }
+        for (const dir of fs.readdirSync(nodeModulesDir)) {
           // scoped packages need to be moved recursively in case there are same
           // scoped packages already installed by the <napi> package
           if (dir.startsWith('@')) {
             const newPath = path.join(newNodeModulesDir, dir)
             fs.mkdirSync(newPath, { recursive: true })
             const subdir = path.join(nodeModulesDir, dir)
-            const nestedDirs = fs.readdirSync(subdir)
-            for (const nestedDir of nestedDirs) {
-              try {
-                movePath(
-                  path.join(subdir, nestedDir),
-                  path.join(newPath, nestedDir),
-                )
-              } catch {
-                // Ignore errors when renaming the directory, for example the
-                // dependency could already be present.
-              }
+            for (const nestedDir of fs.readdirSync(subdir)) {
+              moveOptional(
+                path.join(subdir, nestedDir),
+                path.join(newPath, nestedDir),
+              )
             }
           } else {
-            try {
-              movePath(
-                path.join(nodeModulesDir, dir),
-                path.join(newNodeModulesDir, dir),
-              )
-            } catch {
-              // Ignore errors when renaming the directory, for example the
-              // dependency could already be present.
-            }
+            moveOptional(
+              path.join(nodeModulesDir, dir),
+              path.join(newNodeModulesDir, dir),
+            )
           }
         }
       } else {
