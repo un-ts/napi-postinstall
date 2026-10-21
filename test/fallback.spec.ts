@@ -8,7 +8,7 @@ import unrsResolver from 'unrs-resolver'
 
 const require = createRequire(import.meta.url)
 
-describe.skipIf(process.platform === 'win32')('fallback', () => {
+describe('fallback', () => {
   afterEach(() => {
     delete process.env.SKIP_UNRS_RESOLVER_FALLBACK
     delete process.versions.webcontainer
@@ -129,13 +129,17 @@ describe.skipIf(process.platform === 'win32')('fallback', () => {
     }
   })
 
-  it('should support webcontainer', { timeout: 30_000 }, () => {
-    process.versions.webcontainer = '1'
-    const resolved = fallback<typeof unrsResolver>(
-      require.resolve('unrs-resolver/package.json'),
-      true,
-    )
-    expect(resolved).not.toBe(unrsResolver)
-    expect(typeof resolved.sync).toBe('function')
-  })
+  it.skipIf(process.platform === 'win32')(
+    'should support webcontainer',
+    { timeout: 30_000 },
+    () => {
+      process.versions.webcontainer = '1'
+      const resolved = fallback<typeof unrsResolver>(
+        require.resolve('unrs-resolver/package.json'),
+        true,
+      )
+      expect(resolved).not.toBe(unrsResolver)
+      expect(typeof resolved.sync).toBe('function')
+    },
+  )
 })

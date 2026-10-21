@@ -11,7 +11,10 @@
   "engines": {
     "node": "^12.20.0 || ^14.18.0 || >=16.0.0"
   },
-  "bin": "./lib/cli.js",
+  "bin": {
+    "napi-patch": "./lib/patch.js",
+    "napi-postinstall": "./lib/cli.js"
+  },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "exports": {
@@ -26,6 +29,10 @@
     "./cli": {
       "types": "./lib/cli.d.ts",
       "default": "./lib/cli.js"
+    },
+    "./patch": {
+      "types": "./lib/patch.d.ts",
+      "default": "./lib/patch.js"
     },
     "./package.json": "./package.json"
   },

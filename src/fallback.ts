@@ -7,6 +7,7 @@ import { WASM32_WASI } from './constants.js'
 import {
   errorMessage,
   getNapiInfoFromPackageJson,
+  getSkipFallbackEnv,
   hasWasiTarget,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
@@ -94,8 +95,7 @@ function fallback<T = unknown>(
     },
   )
 
-  // eslint-disable-next-line unicorn-x/prefer-string-replace-all
-  process.env[`SKIP_${name.replace(/-/g, '_').toUpperCase()}_FALLBACK`] = '1'
+  process.env[getSkipFallbackEnv(name)] = '1'
 
   const PKG_RESOLVED_PATH = require.resolve(pkgDir)
 
