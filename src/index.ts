@@ -230,6 +230,12 @@ function installUsingNPM(
     // the package so a move failure cannot leave the current process without
     // the binary.
     const hasDownloadedBinary = fs.existsSync(downloadedBinary)
+    const missingBinaryError = () =>
+      new Error(
+        errorMessage(
+          `Installed package \`${pkg}\` does not contain \`${subpath}\``,
+        ),
+      )
     if (hasDownloadedBinary) {
       fs.mkdirSync(path.dirname(nodePath), { recursive: true })
       fs.copyFileSync(downloadedBinary, nodePath)
@@ -298,21 +304,11 @@ function installUsingNPM(
         movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {
-      // Move the downloaded binary executable into place. The destination path
-      // is the same one that the JavaScript API code uses so it will be able to
-      // find the binary executable here later.
-      if (!hasDownloadedBinary) {
-        // Throw here when the package move failed and the expected binary was
-        // never produced, so the caller still reaches the direct download.
-        movePath(downloadedBinary, nodePath)
-      }
+      // A failed move is recoverable when the local copy already exists; the
+      // check below throws otherwise.
     }
     if (!hasDownloadedBinary) {
-      throw new Error(
-        errorMessage(
-          `Installed package \`${pkg}\` does not contain \`${subpath}\``,
-        ),
-      )
+      throw missingBinaryError()
     }
   } finally {
     try {
