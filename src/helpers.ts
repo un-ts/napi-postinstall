@@ -13,7 +13,7 @@ import {
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
-const NODE_MODULES_SEGMENT = /([\\/])node_modules\1/
+const NODE_MODULES_SEGMENT = /([\\/])node_modules(?:\1|$)/
 
 function stripNodeModules(dir: string) {
   const index = dir.search(NODE_MODULES_SEGMENT)
@@ -121,6 +121,7 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
     return DEFAULT_NPM_REGISTRY
   } finally {
     try {
+      // best effort, the prefix only holds a copy of the project `.npmrc`
       removeRecursive(tempDir, true)
     } catch {}
   }

@@ -59,6 +59,11 @@ describe('getProjectDir', () => {
 
   it('should strip the node_modules segments from the cwd', () => {
     expect(getProjectDir(path.join(root, 'node_modules', 'host'))).toBe(root)
+    // the trailing separator is optional, and so is the package after it
+    expect(getProjectDir(`${path.join(root, 'node_modules')}${path.sep}`)).toBe(
+      root,
+    )
+    expect(getProjectDir(path.join(root, 'node_modules'))).toBe(root)
     expect(
       getProjectDir(
         path.join(

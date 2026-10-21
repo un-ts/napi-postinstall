@@ -64,7 +64,7 @@ function fetch(url: string) {
  * must not reach the logs verbatim. `_authToken` style credentials are separate
  * config keys and are never printed.
  */
-const redact = (url: string) => url.replace(/\/\/[^/]+@/, '//***@')
+const redact = (url: string) => url.replaceAll(/\/\/[^/]+@/g, '//***@')
 
 /**
  * Reads a manifest from the configured registry.
