@@ -148,7 +148,10 @@ export function movePath(from: string, to: string) {
       throw error
     }
     // `verbatimSymlinks` keeps relative link targets pointing at the copied tree
-    // instead of resolving them against the source we are about to remove
+    // instead of resolving them against the source we are about to remove. It
+    // needs Node 16.15, so 16.7-16.14 still resolve them; those versions failed
+    // outright before this copy existed, and engines allows 12 and 14, where
+    // `cpSync` is missing and the failure is rethrown below.
     fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true })
     removeRecursive(from, isDir)
   }
