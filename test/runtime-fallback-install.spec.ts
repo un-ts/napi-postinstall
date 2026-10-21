@@ -116,29 +116,7 @@ describe('runtime fallback install', () => {
     }
   })
 
-  it('should reject when the package has no binary to copy', async () => {
-    const { packageJson, root } = setup()
-    const cwd = process.cwd()
-    delete process.env.npm_config_local_prefix
-    // A populated destination makes the package move fail.
-    write(
-      path.join(root, 'node_modules', '@fake', `binding-${TARGET}`, 'keep'),
-      '',
-    )
-    mockNpmInstall(false)
-    process.chdir(root)
-
-    try {
-      await expect(checkAndPreparePackage(packageJson, false)).rejects.toThrow(
-        'Failed to install package',
-      )
-    } finally {
-      process.chdir(cwd)
-      fs.rmSync(root, { recursive: true, force: true })
-    }
-  })
-
-  it('should reject when the package move succeeds without the binary', async () => {
+  it('should reject when the package has no binary', async () => {
     const { packageJson, root } = setup()
     const cwd = process.cwd()
     delete process.env.npm_config_local_prefix

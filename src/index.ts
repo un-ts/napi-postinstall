@@ -229,17 +229,8 @@ function installUsingNPM(
     // without relying on a same-process re-resolution. Do this before moving
     // the package so a move failure cannot leave the current process without
     // the binary.
-    const hasDownloadedBinary = fs.existsSync(downloadedBinary)
-    const missingBinaryError = () =>
-      new Error(
-        errorMessage(
-          `Installed package \`${pkg}\` does not contain \`${subpath}\``,
-        ),
-      )
-    if (hasDownloadedBinary) {
-      fs.mkdirSync(path.dirname(nodePath), { recursive: true })
-      fs.copyFileSync(downloadedBinary, nodePath)
-    }
+    fs.mkdirSync(path.dirname(nodePath), { recursive: true })
+    fs.copyFileSync(downloadedBinary, nodePath)
 
     try {
       if (isWasm32Wasi) {
@@ -304,11 +295,8 @@ function installUsingNPM(
         movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {
-      // A failed move is recoverable when the local copy already exists; the
-      // check below throws otherwise.
-    }
-    if (!hasDownloadedBinary) {
-      throw missingBinaryError()
+      // The local copy above already covers the current process, so a failed
+      // package move is recoverable.
     }
   } finally {
     try {
