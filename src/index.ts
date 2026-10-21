@@ -213,7 +213,14 @@ function installUsingNPM(
       `npm install --prefix ${path.relative(projectDir, installDir)} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
-      { cwd: projectDir, stdio: 'pipe', env },
+      {
+        cwd: projectDir,
+        stdio: 'pipe',
+        env,
+        // npm can still emit a lot of warnings; the default 1 MiB causes
+        // spawnSync ENOBUFS and makes a successful install look failed.
+        maxBuffer: 64 * 1024 * 1024,
+      },
     )
 
     // Remove the unused "package.json" file
