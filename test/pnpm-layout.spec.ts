@@ -89,11 +89,12 @@ describe('pnpm-style layout', () => {
       ).resolves.toBeUndefined()
 
       expect(consoleError).not.toHaveBeenCalled()
-      // nothing was installed: the consumer tree still only holds the fixture,
-      // so no nested install or download was attempted
-      expect(fs.readdirSync(path.join(consumer, 'node_modules'))).toEqual(
-        expect.arrayContaining(['@fake', HOST]),
-      )
+      // a nested install would land in this prefix, and a download in the host
+      // itself; neither may exist, since the installed binding was enough
+      expect(
+        fs.existsSync(path.join(consumer, 'node_modules', '.napi-postinstall')),
+      ).toBe(false)
+      expect(fs.existsSync(path.join(hostDir, 'node_modules'))).toBe(false)
     } finally {
       process.chdir(cwd)
       consoleError.mockRestore()
