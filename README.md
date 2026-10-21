@@ -51,6 +51,17 @@ You usually don't need to install `napi-postinstall` yourself — it is a
 
 - It works around [npm/cli#4828](https://github.com/npm/cli/issues/4828), where
   `npm` can fail to install the correct platform-specific optional dependency.
+- When it has to install a missing binding by itself, it uses the registry,
+  credentials and CA settings from the project `.npmrc`, so private registries
+  work without extra configuration. The file is read from the project that owns
+  the installed package; one that only exists at a workspace root is not picked
+  up yet, so keep a `.npmrc` next to that project. If npm itself cannot be
+  queried, it warns and uses the public registry, which the two lookups done in
+  JavaScript (reading a manifest and downloading a tarball) then fall back to.
+- A binding that lives on another filesystem is copied rather than renamed. On
+  Node before 16.15 that copy resolves relative symlinks, such as
+  `node_modules/.bin` entries, against the source it then removes, so those links
+  can break.
 - `pnpm` and `yarn` resolve optional dependencies correctly in most cases, so
   the helper is usually a no-op there. Leaving install scripts enabled is the
   safe default.

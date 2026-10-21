@@ -7,16 +7,26 @@ import https from 'node:https'
 import path from 'node:path'
 import zlib from 'node:zlib'
 
-import { meta, PACKAGE_JSON, WASM32, WASM32_WASI } from './constants.js'
+import {
+  meta,
+  NPM_PACKAGE_NAME,
+  NPM_PINNED_VERSION,
+  PACKAGE_JSON,
+  WASM32,
+  WASM32_WASI,
+} from './constants.js'
 import {
   downloadedNodePath,
   errorLog,
   errorMessage,
   getErrorMessage,
-  getGlobalNpmRegistry,
   getNapiInfoFromPackageJson,
   getNapiNativeTargets,
+  getNpmRegistry,
+  getProjectDir,
   hasWasiTarget,
+  movePath,
+  prepareNpmPrefix,
   removeRecursive,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
@@ -47,6 +57,41 @@ function fetch(url: string) {
       })
       .on('error', reject)
   })
+}
+
+/**
+ * A registry URL can carry `user:pass` (legacy basic auth in `registry=`), so it
+ * must not reach the logs verbatim. `_authToken` style credentials are separate
+ * config keys and are never printed.
+ */
+// `replaceAll` needs Node 15, and `engines` still allows 12 and 14, so a global
+// `replace` is the portable spelling
+// eslint-disable-next-line unicorn-x/prefer-string-replace-all
+const redact = (url: string) => url.replace(/\/\/[^/]+@/g, '//***@')
+
+/**
+ * Reads a manifest from the configured registry.
+ *
+ * These requests carry no credentials, so an authenticated registry rejects
+ * them. Falling back to the public registry would let a public manifest decide
+ * which package and version the nested install then looks up in the configured
+ * registry, so the failure is surfaced here instead: a private package must
+ * never be resolved to a public one.
+ */
+async function fetchPackageJson(
+  registry: string,
+  pkg: string,
+  version: string,
+) {
+  try {
+    return await fetch(`${registry}${pkg}/${version}`)
+  } catch (error) {
+    errorLog(
+      `Failed to read ${JSON.stringify(pkg)} from ${JSON.stringify(redact(registry))}: this lookup cannot send credentials`,
+      getErrorMessage(error),
+    )
+    throw error
+  }
 }
 
 function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
@@ -103,12 +148,28 @@ function installUsingNPM(
   // will deadlock waiting for the global installation lock.
   const env = { ...process.env, npm_config_global: undefined }
 
-  // Create a temporary directory inside the "<napi>" package with an empty
-  // "package.json" file. We'll use this to run "npm install" in.
   const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
-  const installDir = path.join(pkgDir, 'npm-install')
+  const projectDir = getProjectDir()
+  // npm runs from the project directory (see below), so `path.relative(projectDir,
+  // installDir)` becomes the `--prefix` argument: anchoring the temporary
+  // directory here keeps that argument to
+  // `node_modules/.napi-postinstall/<pkg>/<version>-XXXXXX` in every layout. The
+  // package itself may live elsewhere — a global install runs the hook from the
+  // package source — which would otherwise leak its directory name into the
+  // command. Staying inside `node_modules` also keeps the directory on the same
+  // filesystem as the packages it moves into place.
+  const projectNodeModules = path.join(projectDir, 'node_modules')
+  const installParent = path.join(projectNodeModules, '.napi-postinstall', pkg)
+  let installDir: string
   try {
-    fs.mkdirSync(installDir, { recursive: true })
+    fs.mkdirSync(installParent, { recursive: true })
+    // The same host version can exist as several nested copies — A and B both
+    // depend on the same `unrs-resolver` while C forces another version, so each
+    // of A and B gets its own copy — and each copy runs this postinstall against
+    // the same project and the same `binding@version`. `mkdtemp` is atomic, so
+    // those attempts can never share the mirrored `.npmrc`, the empty
+    // `package.json` or the temporary `node_modules`.
+    installDir = fs.mkdtempSync(path.join(installParent, `${version}-`))
   } catch (err) {
     const error = err as NodeJS.ErrnoException
     if (error.code === 'EROFS') {
@@ -126,7 +187,12 @@ function installUsingNPM(
   try {
     const packageJsonPath = path.join(installDir, PACKAGE_JSON)
 
-    fs.writeFileSync(packageJsonPath, '{}')
+    // The temporary directory gets its own empty `package.json`, so npm treats
+    // it as the project root: that avoids the caller's `devEngines` (#70). The
+    // project `.npmrc` is copied there too, because npm only reads
+    // `<prefix>/.npmrc` and a nested install would otherwise lose the registry
+    // and its credentials (#37, #43).
+    prepareNpmPrefix(installDir, projectDir)
 
     // Run "npm install" in the temporary directory which should download the
     // desired package. Try to avoid unnecessary log output. This uses the "npm"
@@ -137,11 +203,16 @@ function installUsingNPM(
     // Use the temporary directory as the prefix so npm reads its empty
     // package.json instead of the caller's one. Otherwise npm 11 can fail with
     // EBADDEVENGINES when the caller declares another devEngines.packageManager.
+    //
+    // Run it from the project directory: npm resolves relative values in
+    // `.npmrc`, such as `cafile=./certs/ca.pem`, against its cwd, so this keeps
+    // them pointing at the project rather than at the temporary prefix.
+    //
     execSync(
-      `npm install --prefix . --loglevel=error --prefer-offline --no-audit --progress=false${
+      `npm install --prefix ${path.relative(projectDir, installDir)} --loglevel=error --prefer-offline --no-audit --progress=false${
         isWasm32Wasi ? ` --cpu=${WASM32} --force` : ''
       } ${pkg}@${version}`,
-      { cwd: installDir, stdio: 'pipe', env },
+      { cwd: projectDir, stdio: 'pipe', env },
     )
 
     // Remove the unused "package.json" file
@@ -153,37 +224,43 @@ function installUsingNPM(
 
     try {
       if (isWasm32Wasi) {
-        const newNodeModulesDir = path.resolve(installDir, '../node_modules')
-        const dirs = fs.readdirSync(nodeModulesDir)
-        for (const dir of dirs) {
+        const newNodeModulesDir = path.join(pkgDir, 'node_modules')
+        fs.mkdirSync(newNodeModulesDir, { recursive: true })
+        // A dependency the host package already ships is a normal outcome, so
+        // only report a move that started from nothing. Deciding that before the
+        // move also catches a copy that failed halfway and left the destination
+        // populated.
+        const moveOptional = (from: string, to: string) => {
+          const existed = fs.existsSync(to)
+          try {
+            movePath(from, to)
+          } catch (error) {
+            if (!existed) {
+              errorLog(
+                `Failed to move ${JSON.stringify(to)} into place`,
+                getErrorMessage(error),
+              )
+            }
+          }
+        }
+        for (const dir of fs.readdirSync(nodeModulesDir)) {
           // scoped packages need to be moved recursively in case there are same
           // scoped packages already installed by the <napi> package
           if (dir.startsWith('@')) {
             const newPath = path.join(newNodeModulesDir, dir)
             fs.mkdirSync(newPath, { recursive: true })
             const subdir = path.join(nodeModulesDir, dir)
-            const nestedDirs = fs.readdirSync(subdir)
-            for (const nestedDir of nestedDirs) {
-              try {
-                fs.renameSync(
-                  path.join(subdir, nestedDir),
-                  path.join(newPath, nestedDir),
-                )
-              } catch {
-                // Ignore errors when renaming the directory, for example the
-                // dependency could already be present.
-              }
+            for (const nestedDir of fs.readdirSync(subdir)) {
+              moveOptional(
+                path.join(subdir, nestedDir),
+                path.join(newPath, nestedDir),
+              )
             }
           } else {
-            try {
-              fs.renameSync(
-                path.join(nodeModulesDir, dir),
-                path.join(newNodeModulesDir, dir),
-              )
-            } catch {
-              // Ignore errors when renaming the directory, for example the
-              // dependency could already be present.
-            }
+            moveOptional(
+              path.join(nodeModulesDir, dir),
+              path.join(newNodeModulesDir, dir),
+            )
           }
         }
       } else {
@@ -205,13 +282,13 @@ function installUsingNPM(
           pkg,
         )
         fs.mkdirSync(newPath, { recursive: true })
-        fs.renameSync(path.join(nodeModulesDir, pkg), newPath)
+        movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {
       // Move the downloaded binary executable into place. The destination path
       // is the same one that the JavaScript API code uses so it will be able to
       // find the binary executable here later.
-      fs.renameSync(path.join(nodeModulesDir, pkg, subpath), nodePath)
+      movePath(path.join(nodeModulesDir, pkg, subpath), nodePath)
     }
   } finally {
     try {
@@ -219,7 +296,7 @@ function installUsingNPM(
       // space. Leaving nested "node_modules" directories can also be problematic
       // for certain tools that scan over the file tree and expect it to have a
       // certain structure.
-      removeRecursive(installDir)
+      removeRecursive(installDir, true)
     } catch {
       // Removing a file or directory can randomly break on Windows, returning
       // EBUSY for an arbitrary length of time. I think this happens when some
@@ -232,6 +309,7 @@ function installUsingNPM(
 }
 
 async function downloadDirectlyFromNPM(
+  registry: string,
   pkg: string,
   version: string,
   subpath: string,
@@ -239,15 +317,21 @@ async function downloadDirectlyFromNPM(
 ) {
   // If that fails, the user could have npm configured incorrectly or could not
   // have npm installed. Try downloading directly from npm as a last resort.
-  const url = `${getGlobalNpmRegistry()}${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
-  errorLog(`Trying to download ${JSON.stringify(url)}`)
+  const pathname = `${pkg}/-/${pkg.startsWith('@') ? pkg.split('/')[1] : pkg}-${version}.tgz`
+  const url = `${registry}${pathname}`
+  errorLog(`Trying to download ${JSON.stringify(redact(url))}`)
   try {
+    // No public registry fallback here: this writes an executable into the
+    // project, so it must come from the registry the project configured.
     fs.writeFileSync(
       nodePath,
       extractFileFromTarGzip(await fetch(url), subpath),
     )
   } catch (err) {
-    errorLog(`Failed to download ${JSON.stringify(url)}`, getErrorMessage(err))
+    errorLog(
+      `Failed to download ${JSON.stringify(redact(url))}`,
+      getErrorMessage(err),
+    )
     throw err
   }
 }
@@ -268,6 +352,19 @@ export async function checkAndPreparePackage(
   checkVersion?: boolean,
 ) {
   let packageJson: PackageJson
+  // The registry depends on the package scope, and this is called with both the
+  // host package and the scoped binding package, so cache per scope rather than
+  // once per call.
+  const registries = new Map<string, string>()
+  const getRegistry = (pkg: string) => {
+    const scope = pkg.startsWith('@') ? pkg.split('/')[0] : ''
+    let registry = registries.get(scope)
+    if (registry === undefined) {
+      registry = getNpmRegistry(pkg)
+      registries.set(scope, registry)
+    }
+    return registry
+  }
 
   if (typeof packageNameOrPackageJson === 'string') {
     try {
@@ -284,8 +381,10 @@ export async function checkAndPreparePackage(
         )
       }
       const pkg = packageNameOrPackageJson
-      const packageJsonBuffer = await fetch(
-        `${getGlobalNpmRegistry()}${pkg}/${versionOrCheckVersion}`,
+      const packageJsonBuffer = await fetchPackageJson(
+        getRegistry(pkg),
+        pkg,
+        versionOrCheckVersion,
       )
       packageJson = JSON.parse(
         packageJsonBuffer.toString('utf8'),
@@ -343,6 +442,17 @@ export async function checkAndPreparePackage(
         require.resolve(`${name}/${subpath}`)
         break
       } catch {}
+      // Only the fallbacks below need the values to be safe, and only they are
+      // reached when the binding is missing: an installed package keeps working
+      // even if its `optionalDependencies` uses a range.
+      if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
+        throw new Error(
+          errorMessage(
+            `Refusing to install an unsafe package`,
+            `${pkg}@${version}`,
+          ),
+        )
+      }
       if (isPnp()) {
         if (isWasm32Wasi) {
           try {
@@ -404,7 +514,13 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(pkg, version, subpath, nodePath)
+          await downloadDirectlyFromNPM(
+            getRegistry(pkg),
+            pkg,
+            version,
+            subpath,
+            nodePath,
+          )
           break
         } catch (err) {
           throw new Error(

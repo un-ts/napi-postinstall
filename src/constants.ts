@@ -19,3 +19,18 @@ export const WASM32_WASI = `${WASM32}-${WASI}`
 export const EABI = 'eabi'
 
 export const PACKAGE_JSON = 'package.json'
+
+export const NPMRC = '.npmrc'
+
+/**
+ * The binding package name and the version that ends up in the temporary install
+ * directory and in the npm command. Both come from the dependency's own manifest
+ * (`napi.packageName` and the matching `optionalDependencies` value), which npm
+ * never validates, so they are checked here: a leading `.`/`_` is not a valid npm
+ * name, and the version has to be the exact semver napi-rs pins (a dist-tag or a
+ * `..` would otherwise end up in the install path).
+ */
+export const NPM_PACKAGE_NAME = /^(?:@[a-z0-9-][\w.-]*\/)?[a-z0-9-][\w.-]*$/i
+
+export const NPM_PINNED_VERSION =
+  /^\d+\.\d+\.\d+(?:-[\da-z.-]+)?(?:\+[\da-z.-]+)?$/i

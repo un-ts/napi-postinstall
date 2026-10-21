@@ -1,23 +1,178 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, WASM32_WASI } from './constants.js'
+import {
+  DEFAULT_NPM_REGISTRY,
+  LOG_PREFIX,
+  NPMRC,
+  PACKAGE_JSON,
+  WASM32_WASI,
+} from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
-export function getGlobalNpmRegistry() {
+const NODE_MODULES_SEGMENT = /([\\/])node_modules(?:\1|$)/
+
+function stripNodeModules(dir: string) {
+  const index = dir.search(NODE_MODULES_SEGMENT)
+  return index === -1 ? dir : dir.slice(0, index)
+}
+
+/**
+ * The directory holding the `.npmrc` that applies to the current install.
+ *
+ * npm only reads project config from `<localPrefix>/.npmrc`, and it resolves no
+ * prefix at all when its cwd is inside `node_modules`. For lifecycle scripts it
+ * exports the prefix it did resolve, so that value wins; otherwise fall back to
+ * the directory that owns the `node_modules` the package was installed into,
+ * which is the base case of the same rule and covers pnpm and yarn.
+ *
+ * Workspace roots are deliberately not re-derived: matching `workspaces` globs
+ * and `pnpm-workspace.yaml` would mean reimplementing npm's semantics, and an
+ * approximation can hand the nested install another project's registry and
+ * credentials. Revisit it if there is user feedback that the workspace root
+ * config is missing for an install inside a member's `node_modules`.
+ */
+export function getProjectDir(cwd = process.cwd()) {
+  const localPrefix = process.env.npm_config_local_prefix
+  const dir = path.resolve(localPrefix ?? cwd)
+  const root = path.parse(dir).root
+  const stripped = stripNodeModules(dir)
+  // a path that starts at `node_modules` strips down to nothing, or to `C:` on
+  // Windows, which is a drive-relative path rather than the root directory, so
+  // anything shorter than the root itself cannot be the project directory
+  return stripped.length < root.length ? root : stripped
+}
+
+/**
+ * Prepares `dir` to be used as an npm prefix for a nested install: an empty
+ * `package.json` so npm does not apply the caller's `devEngines`, and a copy of
+ * the project `.npmrc` so the install keeps its registry and credentials.
+ *
+ * npm reads project config from the prefix but resolves relative values in it
+ * against its cwd, so the caller has to run npm from the project directory for
+ * settings like `cafile=./certs/ca.pem` to keep pointing at the project.
+ *
+ * @see https://github.com/un-ts/napi-postinstall/issues/37
+ * @see https://github.com/un-ts/napi-postinstall/issues/43
+ */
+export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
+  fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(path.join(dir, PACKAGE_JSON), '{}')
+  const npmrc = path.join(dir, NPMRC)
   try {
-    const registry = execSync('npm config get registry', {
-      encoding: 'utf8',
-    }).trim()
-    return registry.endsWith('/') ? registry : `${registry}/`
+    // write instead of copying so the file is created with its final mode: a
+    // copy is readable before `chmod`, and a failed copy can leave an empty file
+    // behind, both of which matter because this file may hold `_authToken`
+    const content = fs.readFileSync(path.join(projectDir, NPMRC))
+    fs.writeFileSync(npmrc, content, { mode: 0o600 })
   } catch {
-    return DEFAULT_NPM_REGISTRY
+    // A missing or unreadable `.npmrc` is not fatal, npm falls back to its
+    // built-in defaults just like it does for the caller, but never keep a
+    // partial copy around for the nested npm to read.
+    try {
+      fs.unlinkSync(npmrc)
+    } catch {}
   }
 }
 
-export function removeRecursive(dir: string) {
+/**
+ * The registry npm would use for `pkg`, honouring `@scope:registry`.
+ *
+ * One `npm config ls --json` answers both, so a scoped package does not cost a
+ * second npm start-up. The lookup runs in a temporary prefix because npm
+ * validates `devEngines` against its prefix, so asking from the project
+ * directory can fail with EBADDEVENGINES (#70); the nested install does not need
+ * this, it gets the project `.npmrc` itself.
+ */
+export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
+  let tempDir: string
+  try {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
+  } catch (error) {
+    errorLog(
+      `Failed to read the registry, assuming ${DEFAULT_NPM_REGISTRY}`,
+      getErrorMessage(error),
+    )
+    return DEFAULT_NPM_REGISTRY
+  }
+  try {
+    prepareNpmPrefix(tempDir, projectDir)
+    const config = JSON.parse(
+      execSync('npm config ls --json', {
+        cwd: tempDir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }),
+    ) as Record<string, string | undefined>
+    const scope = pkg?.startsWith('@') ? pkg.split('/')[0] : undefined
+    const registry =
+      (scope && config[`${scope}:registry`]) ||
+      config.registry ||
+      DEFAULT_NPM_REGISTRY
+    return registry.endsWith('/') ? registry : `${registry}/`
+  } catch (error) {
+    errorLog(
+      `Failed to read the npm config of \`${projectDir}\`, assuming ${DEFAULT_NPM_REGISTRY}`,
+      getErrorMessage(error),
+    )
+    return DEFAULT_NPM_REGISTRY
+  } finally {
+    try {
+      // best effort, the prefix only holds a copy of the project `.npmrc`
+      removeRecursive(tempDir, true)
+    } catch {}
+  }
+}
+
+/**
+ * `renameSync`, falling back to a copy when the destination is on another
+ * filesystem: the temporary directory lives under the project, while a linked
+ * host package can live on another volume.
+ */
+export function movePath(from: string, to: string) {
+  try {
+    fs.renameSync(from, to)
+  } catch (error) {
+    // `cpSync` needs Node 16.7+, older versions keep the previous failure
+    if (
+      (error as NodeJS.ErrnoException).code !== 'EXDEV' ||
+      typeof fs.cpSync !== 'function'
+    ) {
+      throw error
+    }
+    const isDir = fs.lstatSync(from).isDirectory()
+    // the copy merges into an existing directory while the rename above refuses
+    // a populated one, so surface that failure instead of mixing the two trees
+    if (isDir && fs.existsSync(to) && fs.readdirSync(to).length > 0) {
+      throw error
+    }
+    // `verbatimSymlinks` keeps relative link targets pointing at the copied tree
+    // instead of resolving them against the source we are about to remove. It
+    // needs Node 16.15, so 16.7-16.14 still resolve them; those versions failed
+    // outright before this copy existed, and engines allows 12 and 14, where
+    // `cpSync` is missing and the failure is rethrown below.
+    fs.cpSync(from, to, { recursive: true, verbatimSymlinks: true })
+    removeRecursive(from, isDir)
+  }
+}
+
+/**
+ * Removes `dir`, which may be a file, a directory or a symlink.
+ *
+ * Pass `isDir` when the caller already knows, so the type is not looked up again;
+ * the recursive calls always do.
+ */
+export function removeRecursive(
+  dir: string,
+  isDir = fs.lstatSync(dir).isDirectory(),
+) {
+  if (!isDir) {
+    fs.unlinkSync(dir)
+    return
+  }
   for (const entry of fs.readdirSync(dir)) {
     const entryPath = path.join(dir, entry)
     let stats: fs.Stats
@@ -27,7 +182,7 @@ export function removeRecursive(dir: string) {
       continue // Guard against https://github.com/nodejs/node/issues/4760
     }
     if (stats.isDirectory()) {
-      removeRecursive(entryPath)
+      removeRecursive(entryPath, true)
     } else {
       fs.unlinkSync(entryPath)
     }
