@@ -28,6 +28,7 @@ import {
   movePath,
   prepareNpmPrefix,
   removeRecursive,
+  resolveFrom,
 } from './helpers.js'
 import type { PackageJson } from './types.js'
 
@@ -148,7 +149,7 @@ function installUsingNPM(
   // will deadlock waiting for the global installation lock.
   const env = { ...process.env, npm_config_global: undefined }
 
-  const pkgDir = path.dirname(require.resolve(hostPkg + `/${PACKAGE_JSON}`))
+  const pkgDir = path.dirname(resolveFrom(hostPkg + `/${PACKAGE_JSON}`))
   const projectDir = getProjectDir()
   // npm runs from the project directory (see below), so `path.relative(projectDir,
   // installDir)` becomes the `--prefix` argument: anchoring the temporary
@@ -369,7 +370,7 @@ export async function checkAndPreparePackage(
   if (typeof packageNameOrPackageJson === 'string') {
     try {
       packageJson = require(
-        packageNameOrPackageJson + `/${PACKAGE_JSON}`,
+        resolveFrom(packageNameOrPackageJson + `/${PACKAGE_JSON}`),
       ) as PackageJson
     } catch {
       // could fail with `pnpm`, `yarn` v2+, etc, fallback to load from npm registry instead
@@ -434,12 +435,12 @@ export async function checkAndPreparePackage(
     try {
       // First check for the binary package from our "optionalDependencies". This
       // package should have been installed alongside this package at install time.
-      require.resolve(`${pkg}/${subpath}`)
+      resolveFrom(`${pkg}/${subpath}`)
       break
     } catch {
       try {
         // Check whether it's already been patched
-        require.resolve(`${name}/${subpath}`)
+        resolveFrom(`${name}/${subpath}`)
         break
       } catch {}
       // Only the fallbacks below need the values to be safe, and only they are
