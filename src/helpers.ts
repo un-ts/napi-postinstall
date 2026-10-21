@@ -190,8 +190,29 @@ export function removeRecursive(
   fs.rmdirSync(dir)
 }
 
+/**
+ * Resolves `specifier` from the package the postinstall belongs to.
+ *
+ * That is the package needing the binding: npm, pnpm and yarn all run a lifecycle
+ * script with the cwd set to it, and its `node_modules` is the one the binding was
+ * installed into. Resolving from our own location instead fails with a pnpm-style
+ * layout and `hoist=false`, where the binding is a sibling of the host while this
+ * package can be linked from a different tree.
+ *
+ * `checkAndPreparePackage` and the CLI are public, so a caller that runs from
+ * somewhere else has to cd into that package first. The own-location lookup is not
+ * kept as a fallback: from a lifecycle script it resolves to the same tree, and
+ * from anywhere else it would return a copy seen from this package's tree rather
+ * than the caller's.
+ *
+ * @see https://github.com/un-ts/napi-postinstall/issues/53
+ */
+export function resolveFrom(specifier: string) {
+  return require.resolve(specifier, { paths: [process.cwd()] })
+}
+
 export function downloadedNodePath(name: string, subpath: string) {
-  const pkgLibDir = path.dirname(require.resolve(name + '/package.json'))
+  const pkgLibDir = path.dirname(resolveFrom(name + '/package.json'))
   return path.join(pkgLibDir, path.basename(subpath))
 }
 
