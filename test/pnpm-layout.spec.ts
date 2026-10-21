@@ -30,9 +30,9 @@ const link = (target: string, linkPath: string) => {
 describe('pnpm-style layout', () => {
   // https://github.com/un-ts/napi-postinstall/issues/53 — with `hoist=false` the
   // binding is a sibling of the host package in the consumer's `node_modules`,
-  // while this package is installed somewhere that cannot see it. Resolving from
-  // our own location fails there; the postinstall runs with the cwd set to the
-  // host package, which can.
+  // while this package is loaded through the tsconfig alias from the repository,
+  // which cannot see either. Resolving from our own location fails there; the
+  // postinstall runs with the cwd set to the host package, which can.
   it('should find a binding that is only visible from the host package', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-pnpm-'))
     const consumer = path.join(root, 'a')
