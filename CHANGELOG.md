@@ -1,5 +1,28 @@
 # Change Log
 
+## 0.3.6
+
+### Patch Changes
+
+- [#73](https://github.com/un-ts/napi-postinstall/pull/73) [`d95190c`](https://github.com/un-ts/napi-postinstall/commit/d95190cf54852d583858e38367ba087cc9887f7c) Thanks [@JounQin](https://github.com/JounQin)! - Support WASI targets listed in `napi.targets` when the WASI binding is not declared in `optionalDependencies`, matching the fallback behavior.
+
+- [#70](https://github.com/un-ts/napi-postinstall/pull/70) [`6527bce`](https://github.com/un-ts/napi-postinstall/commit/6527bce41a861a538bb719eca298dd9e0e68106f) Thanks [@JounQin](https://github.com/JounQin)! - Avoid `EBADDEVENGINES` when the caller declares a different `devEngines.packageManager` by running the fallback `npm install` with the temporary directory as its prefix.
+
+- [#75](https://github.com/un-ts/napi-postinstall/pull/75) [`b4ee025`](https://github.com/un-ts/napi-postinstall/commit/b4ee025a716f83eb086a5ee36b26498d8776800a) Thanks [@JounQin](https://github.com/JounQin)! - Use the locally installed CLI for the runtime fallback instead of invoking `npx`/`pnpm`/`yarn`, and expose the CLI as `napi-postinstall/cli`. This also removes the package-manager and Deno detection from the fallback.
+
+- [#76](https://github.com/un-ts/napi-postinstall/pull/76) [`a94c0db`](https://github.com/un-ts/napi-postinstall/commit/a94c0db49cfdafec313c4b8f80c198d8eb97d785) Thanks [@JounQin](https://github.com/JounQin)! - Respect the project's `.npmrc` when a missing platform binding has to be installed by the nested `npm` fallback. Custom registries configured with `registry` and `_authToken` now work instead of falling back to the public registry. The nested install runs from the project directory, so relative values in that file such as `cafile`, `certfile` and `cache` keep pointing at the project.
+
+  The registry used by the JS API is resolved from the same config as well, including `@scope:registry`. It stays there when the configured registry answers: neither the manifest lookup nor the tarball download falls back to the public registry, since a public manifest could otherwise decide which package is resolved next. When npm itself cannot be queried at all (no `npm` on the machine, or an unreadable project `.npmrc`), the lookup returns the public default rather than failing, and says so in the log.
+
+  Known limitations:
+
+  - A cross-device move copies the tree, and Node below 16.15 ignores `verbatimSymlinks`, so symlinks inside it (such as `node_modules/.bin` for a WASI install) are resolved against the source that is then removed. Node 16.7-16.14 failed that move outright before, so nothing regresses, but the links can break there.
+  - The project directory is the one npm reports for the install, or the directory that owns the `node_modules` the package was installed into. Workspace roots are not derived, so an install that lands in a member's `node_modules` while the `.npmrc` only exists at the workspace root is not covered yet.
+
+  Credentials mirrored into the temporary prefix are written with mode `0600` from the start, so the copy is never readable by other users; the prefix itself is created by `mkdtemp` and is `0700`.
+
+- [#78](https://github.com/un-ts/napi-postinstall/pull/78) [`86ff5e0`](https://github.com/un-ts/napi-postinstall/commit/86ff5e03d613cb691d043f6726c9bca45b18e981) Thanks [@i1stG](https://github.com/i1stG)! - Resolve the host manifest and the installed binding from the directory the postinstall runs in. In a pnpm-style layout with `hoist=false` the binding is a sibling of the host package in the consumer's `node_modules`, while `napi-postinstall` can be linked from a tree that cannot see it, so the lookup used to fall through to the nested install and then to a download — which fails in an offline sandbox. In a normal npm, yarn or pnpm install the cwd is the package that needs the binding, so nothing changes for them.
+
 ## 0.3.5
 
 ### Patch Changes
