@@ -229,9 +229,11 @@ function installUsingNPM(
     // without relying on a same-process re-resolution. Do this before moving
     // the package so a move failure cannot leave the current process without
     // the binary.
+    let binaryCopied = false
     if (fs.existsSync(downloadedBinary)) {
       fs.mkdirSync(path.dirname(nodePath), { recursive: true })
       fs.copyFileSync(downloadedBinary, nodePath)
+      binaryCopied = true
     }
 
     try {
@@ -300,7 +302,7 @@ function installUsingNPM(
       // Move the downloaded binary executable into place. The destination path
       // is the same one that the JavaScript API code uses so it will be able to
       // find the binary executable here later.
-      if (fs.existsSync(downloadedBinary)) {
+      if (!binaryCopied && fs.existsSync(downloadedBinary)) {
         movePath(downloadedBinary, nodePath)
       }
     }
