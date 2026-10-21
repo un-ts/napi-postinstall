@@ -64,7 +64,10 @@ function fetch(url: string) {
  * must not reach the logs verbatim. `_authToken` style credentials are separate
  * config keys and are never printed.
  */
-const redact = (url: string) => url.replaceAll(/\/\/[^/]+@/g, '//***@')
+// `replaceAll` needs Node 15, and `engines` still allows 12 and 14, so a global
+// `replace` is the portable spelling
+// eslint-disable-next-line unicorn-x/prefer-string-replace-all
+const redact = (url: string) => url.replace(/\/\/[^/]+@/g, '//***@')
 
 /**
  * Reads a manifest from the configured registry.
