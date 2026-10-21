@@ -284,6 +284,14 @@ function installUsingNPM(
         )
         fs.mkdirSync(newPath, { recursive: true })
         movePath(path.join(nodeModulesDir, pkg), newPath)
+        // The loader also checks this local path. Node may have cached the
+        // failed package lookup from before the install, so make the binary
+        // available without relying on a same-process re-resolution.
+        const installedBinary = path.join(newPath, subpath)
+        if (fs.existsSync(installedBinary)) {
+          fs.mkdirSync(path.dirname(nodePath), { recursive: true })
+          fs.copyFileSync(installedBinary, nodePath)
+        }
       }
     } catch {
       // Move the downloaded binary executable into place. The destination path
