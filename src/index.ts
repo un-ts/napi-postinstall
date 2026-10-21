@@ -224,12 +224,15 @@ function installUsingNPM(
         const newNodeModulesDir = path.join(pkgDir, 'node_modules')
         fs.mkdirSync(newNodeModulesDir, { recursive: true })
         // A dependency the host package already ships is a normal outcome, so
-        // only report a move that left nothing behind.
+        // only report a move that started from nothing. Deciding that before the
+        // move also catches a copy that failed halfway and left the destination
+        // populated.
         const moveOptional = (from: string, to: string) => {
+          const existed = fs.existsSync(to)
           try {
             movePath(from, to)
           } catch (error) {
-            if (!fs.existsSync(to)) {
+            if (!existed) {
               errorLog(
                 `Failed to move ${JSON.stringify(to)} into place`,
                 getErrorMessage(error),
