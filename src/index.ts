@@ -307,6 +307,13 @@ function installUsingNPM(
         movePath(downloadedBinary, nodePath)
       }
     }
+    if (!hasDownloadedBinary) {
+      throw new Error(
+        errorMessage(
+          `Installed package \`${pkg}\` does not contain \`${subpath}\``,
+        ),
+      )
+    }
   } finally {
     try {
       // Try to clean up afterward so we don't unnecessarily waste file system
