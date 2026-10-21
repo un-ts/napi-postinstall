@@ -223,6 +223,14 @@ function installUsingNPM(
 
     const nodeModulesDir = path.join(installDir, 'node_modules')
 
+    // The loader also checks this local path. Node may have cached the failed
+    // package lookup from before the install, so make the binary available
+    // without relying on a same-process re-resolution. Do this before moving
+    // the package so a move failure cannot leave the current process without
+    // the binary.
+    fs.mkdirSync(path.dirname(nodePath), { recursive: true })
+    fs.copyFileSync(path.join(nodeModulesDir, pkg, subpath), nodePath)
+
     try {
       if (isWasm32Wasi) {
         const newNodeModulesDir = path.join(pkgDir, 'node_modules')
@@ -286,10 +294,8 @@ function installUsingNPM(
         movePath(path.join(nodeModulesDir, pkg), newPath)
       }
     } catch {
-      // Move the downloaded binary executable into place. The destination path
-      // is the same one that the JavaScript API code uses so it will be able to
-      // find the binary executable here later.
-      movePath(path.join(nodeModulesDir, pkg, subpath), nodePath)
+      // The local copy above already covers the current process, so a failed
+      // package move is recoverable.
     }
   } finally {
     try {
