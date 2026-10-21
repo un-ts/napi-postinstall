@@ -41,8 +41,9 @@ export function getProjectDir(cwd = process.cwd()) {
   const root = path.parse(dir).root
   const stripped = stripNodeModules(dir)
   // a path that starts at `node_modules` strips down to nothing, or to `C:` on
-  // Windows, which is a drive-relative path rather than the root directory
-  return !stripped || stripped === root.slice(0, -1) ? root : stripped
+  // Windows, which is a drive-relative path rather than the root directory, so
+  // anything shorter than the root itself cannot be the project directory
+  return stripped.length < root.length ? root : stripped
 }
 
 /**
@@ -114,7 +115,7 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
     return registry.endsWith('/') ? registry : `${registry}/`
   } catch (error) {
     errorLog(
-      `Failed to read the registry from \`${path.join(projectDir, NPMRC)}\`, assuming ${DEFAULT_NPM_REGISTRY}`,
+      `Failed to read the npm config of \`${projectDir}\`, assuming ${DEFAULT_NPM_REGISTRY}`,
       getErrorMessage(error),
     )
     return DEFAULT_NPM_REGISTRY
@@ -158,7 +159,7 @@ export function movePath(from: string, to: string) {
 }
 
 /**
- * Removes `target`, which may be a file or a symlink.
+ * Removes `dir`, which may be a file, a directory or a symlink.
  *
  * Pass `isDir` when the caller already knows, so the type is not looked up again;
  * the recursive calls always do.

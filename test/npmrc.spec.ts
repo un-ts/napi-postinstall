@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { beforeEach, vi } from 'vitest'
+import { afterEach, beforeEach, vi } from 'vitest'
 
 import {
   DEFAULT_NPM_REGISTRY,
@@ -134,7 +134,7 @@ describe('prepareNpmPrefix', () => {
     ].join('\n')
     write(path.join(root, NPMRC), npmrc)
 
-    const prefix = path.join(root, 'node_modules', 'host', 'npm-install')
+    const prefix = path.join(root, 'node_modules', 'host', 'prefix')
     prepareNpmPrefix(prefix, root)
 
     expect(read(path.join(prefix, PACKAGE_JSON))).toBe('{}')
@@ -152,14 +152,14 @@ describe('prepareNpmPrefix', () => {
     ].join('\n')
     write(path.join(root, NPMRC), npmrc)
 
-    const prefix = path.join(root, 'npm-install')
+    const prefix = path.join(root, 'prefix')
     prepareNpmPrefix(prefix, root)
 
     expect(read(path.join(prefix, NPMRC))).toBe(npmrc)
   })
 
   it('should not fail without a project npmrc', () => {
-    const prefix = path.join(root, 'npm-install')
+    const prefix = path.join(root, 'prefix')
     prepareNpmPrefix(prefix, root)
 
     expect(fs.readdirSync(prefix)).toEqual([PACKAGE_JSON])
@@ -170,7 +170,7 @@ describe('prepareNpmPrefix', () => {
     // a directory cannot be read as a file, whatever the user id
     fs.mkdirSync(npmrc)
 
-    const prefix = path.join(root, 'npm-install')
+    const prefix = path.join(root, 'prefix')
     prepareNpmPrefix(prefix, root)
 
     expect(fs.readdirSync(prefix)).toEqual([PACKAGE_JSON])
