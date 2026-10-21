@@ -222,7 +222,6 @@ function installUsingNPM(
     }
 
     const nodeModulesDir = path.join(installDir, 'node_modules')
-    const downloadedBinary = path.join(nodeModulesDir, pkg, subpath)
 
     // The loader also checks this local path. Node may have cached the failed
     // package lookup from before the install, so make the binary available
@@ -230,7 +229,7 @@ function installUsingNPM(
     // the package so a move failure cannot leave the current process without
     // the binary.
     fs.mkdirSync(path.dirname(nodePath), { recursive: true })
-    fs.copyFileSync(downloadedBinary, nodePath)
+    fs.copyFileSync(path.join(nodeModulesDir, pkg, subpath), nodePath)
 
     try {
       if (isWasm32Wasi) {
