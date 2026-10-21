@@ -200,8 +200,10 @@ export function removeRecursive(
  * package can be linked from a different tree.
  *
  * `checkAndPreparePackage` and the CLI are public, so a caller that runs from
- * somewhere else has to cd into that package first; the own-location lookup is not
- * kept as a fallback, since it can only succeed when both agree anyway.
+ * somewhere else has to cd into that package first. The own-location lookup is not
+ * kept as a fallback: from a lifecycle script it resolves to the same tree, and
+ * from anywhere else it would return a copy seen from this package's tree rather
+ * than the caller's.
  *
  * @see https://github.com/un-ts/napi-postinstall/issues/53
  */
