@@ -30,7 +30,7 @@ describe('napi-postinstall', () => {
     await expect(
       checkAndPreparePackage('napi-postinstall'),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: [napi-postinstall@0.3.6] No \`napi.targets\` nor \`napi.triples.additional\` field found in \`napi-postinstall\`'s \`package.json\`. Please ensure the package is built with NAPI support.]`,
+      `[Error: [napi-postinstall@0.3.7] No \`napi.targets\` nor \`napi.triples.additional\` field found in \`napi-postinstall\`'s \`package.json\`. Please ensure the package is built with NAPI support.]`,
     )
   })
 
