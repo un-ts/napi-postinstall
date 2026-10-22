@@ -1,6 +1,6 @@
 {
   "name": "napi-postinstall",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "commonjs",
   "description": "The `postinstall` script helper for handling native bindings in legacy `npm` versions",
   "repository": "git+https://github.com/un-ts/napi-postinstall.git",
@@ -87,7 +87,7 @@
     "eslint-plugin-react-hooks": "^7.0.0",
     "github-markdown-css": "^5.8.1",
     "nano-staged": "^1.0.0",
-    "napi-postinstall": "^0.3.6",
+    "napi-postinstall": "^0.3.7",
     "prettier": "^3.6.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

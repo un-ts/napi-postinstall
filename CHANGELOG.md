@@ -1,5 +1,13 @@
 # Change Log
 
+## 0.3.7
+
+### Patch Changes
+
+- [#81](https://github.com/un-ts/napi-postinstall/pull/81) [`0a96d2a`](https://github.com/un-ts/napi-postinstall/commit/0a96d2aa1a278058483f4397c664add10ecee58e) Thanks [@JounQin](https://github.com/JounQin)! - Copy the installed binding binary to the loader's local path so the runtime fallback still works when Node has cached the failed package lookup.
+
+- [#79](https://github.com/un-ts/napi-postinstall/pull/79) [`0f3601d`](https://github.com/un-ts/napi-postinstall/commit/0f3601d87bb392fdfa95ad39c9a80c13a26cffa8) Thanks [@JounQin](https://github.com/JounQin)! - Add a `napi-patch` bin for injecting the all-platform runtime fallback into generated napi-rs loaders. It inserts the all-platform fallback before the loader's final `if (!nativeBinding)` check, with no WebContainer-only guard. The API accepts an entry, package name and extra text to append; nested entries such as `napi/index.js` are supported. The inserted fallback is guarded by `SKIP_<PACKAGE>_FALLBACK`; scoped names are encoded as `SKIP_SCOPE_PACKAGE_FALLBACK`. A loader that already ran the fallback gives up instead of starting another nested install.
+
 ## 0.3.6
 
 ### Patch Changes
