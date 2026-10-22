@@ -480,6 +480,15 @@ export function hasWasiTarget(targets?: string[]) {
   )
 }
 
+export function getSkipFallbackEnv(name: string) {
+  const normalized = name
+    .replace(/^@/, '')
+    // eslint-disable-next-line unicorn-x/prefer-string-replace-all
+    .replace(/[^a-z0-9]+/gi, '_')
+    .toUpperCase()
+  return `SKIP_${normalized}_FALLBACK`
+}
+
 export function getErrorMessage(err: unknown) {
   return (err as Error | undefined)?.message || String(err)
 }

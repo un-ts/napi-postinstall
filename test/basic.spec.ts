@@ -2,7 +2,7 @@ import { checkAndPreparePackage } from 'napi-postinstall'
 import type { PackageJson } from 'napi-postinstall'
 import { vi } from 'vitest'
 
-import { hasWasiTarget } from '../src/helpers.js'
+import { getSkipFallbackEnv, hasWasiTarget } from '../src/helpers.js'
 
 // The WASI case below only has to reach the fallback; a real `npm install` and a
 // real registry lookup cost tens of seconds of npm start-up on a loaded Windows
@@ -32,6 +32,14 @@ describe('napi-postinstall', () => {
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[Error: [napi-postinstall@0.3.6] No \`napi.targets\` nor \`napi.triples.additional\` field found in \`napi-postinstall\`'s \`package.json\`. Please ensure the package is built with NAPI support.]`,
     )
+  })
+
+  it('should encode package names for the skip env', () => {
+    expect(getSkipFallbackEnv('my-package')).toBe('SKIP_MY_PACKAGE_FALLBACK')
+    expect(getSkipFallbackEnv('@scope/my-package')).toBe(
+      'SKIP_SCOPE_MY_PACKAGE_FALLBACK',
+    )
+    expect(getSkipFallbackEnv('x.js')).toBe('SKIP_X_JS_FALLBACK')
   })
 
   it('should detect a WASI target from napi.targets', () => {

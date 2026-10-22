@@ -15,6 +15,12 @@ export default [
     },
   },
   {
+    files: ['src/patch.ts'],
+    rules: {
+      'n/hashbang': 'off',
+    },
+  },
+  {
     files: ['**/*.tsx'],
     rules: {
       '@eslint-react/jsx-uses-react': 'off',

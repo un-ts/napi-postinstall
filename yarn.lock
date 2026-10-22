@@ -11144,6 +11144,7 @@ __metadata:
     vitest: "npm:^5.0.5"
     yarn-berry-deduplicate: "npm:^7.0.0"
   bin:
+    napi-patch: ./lib/patch.js
     napi-postinstall: ./lib/cli.js
   languageName: unknown
   linkType: soft

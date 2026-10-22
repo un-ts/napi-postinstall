@@ -13,9 +13,9 @@
 [![Code Style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![changesets](https://img.shields.io/badge/maintained%20with-changesets-176de3.svg)](https://github.com/changesets/changesets)
 
-The `postinstall` script helper for handling native bindings in `npm` versions
-affected by [npm/cli#4828](https://github.com/npm/cli/issues/4828). This is a
-reimplementation of the [`node-install`][node-install] functionality from
+The install-time and runtime helper for handling native bindings in `npm`
+versions affected by [npm/cli#4828](https://github.com/npm/cli/issues/4828). This
+is a reimplementation of the [`node-install`][node-install] functionality from
 [`esbuild`][esbuild] for [`napi-rs`][napi-rs] ecosystem packages like
 [`rollup`][rollup], [`@swc/core`][swc-core] and [`unrs-resolver`][unrs-resolver].
 
@@ -31,6 +31,8 @@ For more details, please refer to the following issues:
   - [TL;DR for package users](#tldr-for-package-users)
   - [Notes for package authors](#notes-for-package-authors)
   - [Install](#install)
+  - [Runtime fallback](#runtime-fallback)
+    - [Patching a generated loader](#patching-a-generated-loader)
   - [Postinstall script](#postinstall-script)
   - [CLI](#cli)
   - [API](#api)
@@ -46,9 +48,12 @@ For more details, please refer to the following issues:
 
 ### TL;DR for package users
 
-You usually don't need to install `napi-postinstall` yourself — it is a
-`postinstall` helper used by some napi-rs packages.
+You usually don't need to install `napi-postinstall` yourself — it is an
+install-time or runtime helper used by some napi-rs packages.
 
+- For new packages, prefer the [runtime fallback](#runtime-fallback): no install
+  script is needed, and it works on all native platforms as well as in
+  WebContainer.
 - It works around [npm/cli#4828](https://github.com/npm/cli/issues/4828), where
   `npm` can fail to install the correct platform-specific optional dependency.
 - When it has to install a missing binding by itself, it uses the registry,
@@ -71,15 +76,20 @@ You usually don't need to install `napi-postinstall` yourself — it is a
   not `napi-postinstall`) to
   [`ignoredBuiltDependencies`][ignored-built-dependencies] to silence the
   warning when installation already works.
-- If the native binding fails to load, re-enable install scripts and reinstall.
+- If the native binding fails to load, use the
+  [runtime fallback](#runtime-fallback) (or re-enable install scripts and
+  reinstall).
 
 ### Notes for package authors
 
-Prefer a `postinstall.js` that calls the API instead of invoking the
-`napi-postinstall` binary from `postinstall`; see [Postinstall script](#postinstall-script).
+For new packages, prefer the [runtime fallback](#runtime-fallback): it works on
+all native platforms and in WebContainer, and does not require an install script.
+The postinstall path remains supported for compatibility.
 
-If your package runs `napi-postinstall` in `postinstall`, you can copy this note
-into your own README:
+If your package must use `postinstall`, prefer a `postinstall.js` that calls the
+API instead of invoking the `napi-postinstall` binary; see
+[Postinstall script](#postinstall-script). You can copy this note into your own
+README:
 
 > This package uses `napi-postinstall` so the correct native binding is
 > installed on `npm` versions affected by
@@ -104,10 +114,98 @@ npm i napi-postinstall
 bun add napi-postinstall
 ```
 
+### Runtime fallback
+
+A runtime fallback in the package loader is the preferred integration for new
+packages. It needs no install script, works on every native platform, and
+automatically uses the WASI build in WebContainer:
+
+```js
+// index.js — the block napi-patch inserts into a generated napi-rs loader
+let nativeBinding = null
+let __napiLoadedBindingTarget = 'native'
+const loadErrors = []
+
+// ...napi-rs generated platform loading...
+
+if (!nativeBinding && process.env['SKIP_<PACKAGE>_FALLBACK'] !== '1') {
+  try {
+    nativeBinding = require('napi-postinstall/fallback')(
+      require.resolve('./package.json'),
+      true,
+    )
+    if (
+      typeof __napiLoadedBindingTarget !== 'undefined' &&
+      typeof nativeBinding.__napiBindingTarget === 'string'
+    ) {
+      __napiLoadedBindingTarget = nativeBinding.__napiBindingTarget
+    }
+  } catch (err) {
+    loadErrors.push(err)
+  }
+}
+```
+
+`fallback()` is synchronous and only runs when the normal binding lookup fails.
+It uses the locally installed `napi-postinstall` CLI, so it inherits the project
+registry and authentication configuration. The block must run before the
+loader's final `if (!nativeBinding)` throw; `napi-patch` places it there
+automatically and guards it with `SKIP_<PACKAGE>_FALLBACK` (`<PACKAGE>` strips
+a leading `@` and replaces runs of non-alphanumeric characters with `_`, then
+uppercases; `@scope/my-package` becomes `SKIP_SCOPE_MY_PACKAGE_FALLBACK`). If that env is set and no
+binding was loaded, the loader's final check throws instead of starting another
+nested install.
+
+#### Patching a generated loader
+
+For a loader generated by napi-rs, use the `napi-patch` bin instead of copying
+the snippet into a build script:
+
+```sh
+napi-patch               # index.js, name from package.json
+napi-patch my-package    # index.js, explicit name
+napi-patch napi/index.js # nested entry, name from package.json
+napi-patch napi/index.js my-package
+```
+
+With two arguments, the first is always the entry and the second is the package
+name. With one argument, a name containing `.` is treated as the entry; otherwise
+it is the package name and the entry defaults to `index.js`. This keeps dotted
+package names unambiguous:
+
+```sh
+napi-patch index.js @scope.whatever/package
+```
+
+The name falls back to `package.json` in the current directory. The inserted
+`require.resolve('./package.json')` assumes the published loader sits next to the
+manifest, which is the normal napi-rs layout. It adds the fallback before the
+loader's final `if (!nativeBinding)` check, guards it with
+`SKIP_<PACKAGE>_FALLBACK`, and adds no `webcontainer` condition: the fallback is
+attempted on every platform when the normal binding is missing.
+
+Project-specific additions, such as a Yarn PnP environment flag, can be passed
+through the API:
+
+```js
+import { patch } from 'napi-postinstall/patch'
+
+patch({
+  entry: 'napi/index.js',
+  name: 'my-package',
+  append: `
+if (process.versions.pnp) {
+  process.env.MY_PACKAGE_YARN_PNP = '1'
+}
+`,
+})
+```
+
 ### Postinstall script
 
-Prefer a `postinstall.js` that calls the API over invoking the CLI directly
-from `postinstall`. With `npm --no-bin-links`, the bin shim may not exist
+For packages that still use a postinstall hook, prefer a `postinstall.js` that
+calls the API over invoking the CLI directly from `postinstall`. With
+`npm --no-bin-links`, the bin shim may not exist
 ([unrs-resolver#190](https://github.com/unrs/unrs-resolver/issues/190)). Use a
 JavaScript file that calls the API instead:
 
@@ -161,25 +259,37 @@ declare function fallback<T = unknown>(
   checkVersion?: boolean,
 ): T
 export = fallback
+
+// napi-postinstall/patch
+export interface PatchOptions {
+  entry?: string
+  name: string
+  append?: string
+}
+export declare function patch(options: PatchOptions): void
 ```
 
-The installed CLI script is also exposed as `napi-postinstall/cli` for use by the runtime fallback.
+The installed CLI scripts are exposed as `napi-postinstall` and `napi-patch`.
 
 #### Example
 
+Use `napi-patch` after generating `index.js`:
+
+```sh
+napi-patch
+```
+
+The inserted block is shown in [Runtime fallback](#runtime-fallback). If you
+maintain a custom loader instead, call `fallback()` from its final
+`if (!nativeBinding)` branch.
+
 ```js
-// index.js
+// postinstall.js — legacy compatibility path
 const { checkAndPreparePackage, isNpm } = require('napi-postinstall')
 
 if (isNpm()) {
   void checkAndPreparePackage('unrs-resolver' /* <napi-package-name> */)
 }
-
-// fallback.js
-module.exports = require('napi-postinstall/fallback')(
-  require.resolve('./package.json') /* <napi-package-json-path> */,
-  true /* <check-version> */,
-)
 ```
 
 ## Sponsors and Backers
