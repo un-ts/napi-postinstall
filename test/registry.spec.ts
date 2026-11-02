@@ -17,12 +17,13 @@ interface MockResponse {
 }
 
 const requests: string[] = []
+const resume = vi.hoisted(() => vi.fn())
 
 vi.mock('node:https', () => ({
   default: {
     get: (url: string, callback: (response: MockResponse) => void) => {
       requests.push(url)
-      callback({ statusCode: 401, headers: {}, on: vi.fn(), resume: vi.fn() })
+      callback({ statusCode: 401, headers: {}, on: vi.fn(), resume })
       return { on: vi.fn() }
     },
   },
@@ -41,5 +42,6 @@ describe('registry', () => {
     }
 
     expect(requests).toEqual(['https://private.example/fake-pkg/1.0.0'])
+    expect(resume).toHaveBeenCalled()
   })
 })
