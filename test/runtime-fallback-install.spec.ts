@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import http from 'node:http'
+import type { AddressInfo } from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -173,6 +174,49 @@ describe('runtime fallback install', () => {
         'downloaded binary',
       )
     } finally {
+      await new Promise<void>(resolve => {
+        server.close(() => resolve())
+      })
+      process.chdir(cwd)
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  })
+
+  it('should release the socket of a redirect response', async () => {
+    const { hostDir, packageJson, root } = setup()
+    const cwd = process.cwd()
+    const archive = createArchive(SUBPATH, 'downloaded binary')
+    const server = http.createServer((request, response) => {
+      if (request.url === '/redirected') {
+        response.end(archive)
+        return
+      }
+      const { port } = server.address() as AddressInfo
+      response.writeHead(302, {
+        location: `http://127.0.0.1:${port}/redirected`,
+      })
+      response.end('Found')
+    })
+    await new Promise<void>(resolve => {
+      server.listen(0, '127.0.0.1', resolve)
+    })
+    const address = server.address()
+    const port = typeof address === 'string' ? address : address?.port
+    delete process.env.npm_config_local_prefix
+    mockNpmInstall(false, `http://127.0.0.1:${port}/`)
+    process.chdir(root)
+
+    try {
+      await expect(
+        checkAndPreparePackage(packageJson, false),
+      ).resolves.toBeUndefined()
+      expect(fs.readFileSync(path.join(hostDir, SUBPATH), 'utf8')).toBe(
+        'downloaded binary',
+      )
+      // an unread response keeps its keep-alive socket busy and the process alive
+      expect(Object.keys(http.globalAgent.sockets)).toEqual([])
+    } finally {
+      server.closeAllConnections()
       await new Promise<void>(resolve => {
         server.close(() => resolve())
       })
