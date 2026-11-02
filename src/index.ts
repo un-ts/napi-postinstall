@@ -46,10 +46,12 @@ function fetch(url: string) {
           REDIRECT_STATUS_CODES.has(res.statusCode!) &&
           res.headers.location
         ) {
+          res.resume()
           fetch(res.headers.location).then(resolve, reject)
           return
         }
         if (res.statusCode !== 200) {
+          res.resume()
           return reject(new Error(`Server responded with ${res.statusCode}`))
         }
         const chunks: Buffer[] = []

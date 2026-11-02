@@ -13,6 +13,7 @@ interface MockResponse {
   statusCode: number
   headers: Record<string, string>
   on: (event: string, listener: (chunk?: Buffer) => void) => void
+  resume: () => void
 }
 
 const requests: string[] = []
@@ -21,7 +22,7 @@ vi.mock('node:https', () => ({
   default: {
     get: (url: string, callback: (response: MockResponse) => void) => {
       requests.push(url)
-      callback({ statusCode: 401, headers: {}, on: vi.fn() })
+      callback({ statusCode: 401, headers: {}, on: vi.fn(), resume: vi.fn() })
       return { on: vi.fn() }
     },
   },
