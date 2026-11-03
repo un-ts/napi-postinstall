@@ -12,6 +12,7 @@ const removeUnrelatedWarnings = (stderr: string) =>
     .filter(
       line =>
         !line.startsWith('npm warn') &&
+        !line.startsWith('npm notice run ') &&
         !line.startsWith('! Corepack is about to download'),
     )
     .join('\n')
