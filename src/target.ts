@@ -24,14 +24,17 @@ const SysToNodePlatform: Record<string, Platform> = {
 const SUB_SYSTEMS = new Set(['android', 'ohos'])
 
 /**
- * A triple is a specific format for specifying a target architecture.
- * Triples may be referred to as a target triple which is the architecture for the artifact produced, and the host triple which is the architecture that the compiler is running on.
- * The general format of the triple is `<arch><sub>-<vendor>-<sys>-<abi>` where:
- *   - `arch` = The base CPU architecture, for example `x86_64`, `i686`, `arm`, `thumb`, `mips`, etc.
- *   - `sub` = The CPU sub-architecture, for example `arm` has `v7`, `v7s`, `v5te`, etc.
- *   - `vendor` = The vendor, for example `unknown`, `apple`, `pc`, `nvidia`, etc.
- *   - `sys` = The system name, for example `linux`, `windows`, `darwin`, etc. none is typically used for bare-metal without an OS.
- *   - `abi` = The ABI, for example `gnu`, `android`, `eabi`, etc.
+ * A triple is a specific format for specifying a target architecture. Triples may be referred to as
+ * a target triple which is the architecture for the artifact produced, and the host triple which is
+ * the architecture that the compiler is running on. The general format of the triple is
+ * `<arch><sub>-<vendor>-<sys>-<abi>` where:
+ *
+ * - `arch` = The base CPU architecture, for example `x86_64`, `i686`, `arm`, `thumb`, `mips`, etc.
+ * - `sub` = The CPU sub-architecture, for example `arm` has `v7`, `v7s`, `v5te`, etc.
+ * - `vendor` = The vendor, for example `unknown`, `apple`, `pc`, `nvidia`, etc.
+ * - `sys` = The system name, for example `linux`, `windows`, `darwin`, etc. none is typically used
+ *   for bare-metal without an OS.
+ * - `abi` = The ABI, for example `gnu`, `android`, `eabi`, etc.
  */
 export function parseTriple(rawTriple: string): Target {
   if (
@@ -47,9 +50,7 @@ export function parseTriple(rawTriple: string): Target {
       abi: WASI,
     }
   }
-  const triple = rawTriple.endsWith(EABI)
-    ? `${rawTriple.slice(0, -4)}-${EABI}`
-    : rawTriple
+  const triple = rawTriple.endsWith(EABI) ? `${rawTriple.slice(0, -4)}-${EABI}` : rawTriple
   const triples = triple.split('-')
   let cpu: string
   let sys: string

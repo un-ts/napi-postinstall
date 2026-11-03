@@ -42,10 +42,7 @@ function fetch(url: string) {
 
     apiClient
       .get(url, res => {
-        if (
-          REDIRECT_STATUS_CODES.has(res.statusCode!) &&
-          res.headers.location
-        ) {
+        if (REDIRECT_STATUS_CODES.has(res.statusCode!) && res.headers.location) {
           res.resume()
           fetch(res.headers.location).then(resolve, reject)
           return
@@ -63,29 +60,22 @@ function fetch(url: string) {
 }
 
 /**
- * A registry URL can carry `user:pass` (legacy basic auth in `registry=`), so it
- * must not reach the logs verbatim. `_authToken` style credentials are separate
- * config keys and are never printed.
+ * A registry URL can carry `user:pass` (legacy basic auth in `registry=`), so it must not reach the
+ * logs verbatim. `_authToken` style credentials are separate config keys and are never printed.
  */
 // `replaceAll` needs Node 15, and `engines` still allows 12 and 14, so a global
 // `replace` is the portable spelling
-// eslint-disable-next-line unicorn-x/prefer-string-replace-all
 const redact = (url: string) => url.replace(/\/\/[^/]+@/g, '//***@')
 
 /**
  * Reads a manifest from the configured registry.
  *
- * These requests carry no credentials, so an authenticated registry rejects
- * them. Falling back to the public registry would let a public manifest decide
- * which package and version the nested install then looks up in the configured
- * registry, so the failure is surfaced here instead: a private package must
- * never be resolved to a public one.
+ * These requests carry no credentials, so an authenticated registry rejects them. Falling back to
+ * the public registry would let a public manifest decide which package and version the nested
+ * install then looks up in the configured registry, so the failure is surfaced here instead: a
+ * private package must never be resolved to a public one.
  */
-async function fetchPackageJson(
-  registry: string,
-  pkg: string,
-  version: string,
-) {
+async function fetchPackageJson(registry: string, pkg: string, version: string) {
   try {
     return await fetch(`${registry}${pkg}/${version}`)
   } catch (error) {
@@ -101,10 +91,9 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
   try {
     buffer = zlib.unzipSync(buffer)
   } catch (err) {
-    throw new Error(
-      errorMessage(`Invalid gzip data in archive`, getErrorMessage(err)),
-      { cause: err },
-    )
+    throw new Error(errorMessage(`Invalid gzip data in archive`, getErrorMessage(err)), {
+      cause: err,
+    })
   }
   const str = (i: number, n: number) =>
     // eslint-disable-next-line sonarjs/super-linear-regex
@@ -179,9 +168,7 @@ function installUsingNPM(
       // This can happen if the package is installed in a read-only location
       // (e.g. "node_modules" inside a read-only directory). In this case, we
       // can't install the package and should just give up.
-      errorLog(
-        `Failed to create the temporary directory on read-only location: ${error.message}`,
-      )
+      errorLog(`Failed to create the temporary directory on read-only location: ${error.message}`)
       errorLog(`You have to install \`${pkg}\` manually in this case.`)
       return
     }
@@ -247,10 +234,7 @@ function installUsingNPM(
             movePath(from, to)
           } catch (error) {
             if (!existed) {
-              errorLog(
-                `Failed to move ${JSON.stringify(to)} into place`,
-                getErrorMessage(error),
-              )
+              errorLog(`Failed to move ${JSON.stringify(to)} into place`, getErrorMessage(error))
             }
           }
         }
@@ -262,25 +246,17 @@ function installUsingNPM(
             fs.mkdirSync(newPath, { recursive: true })
             const subdir = path.join(nodeModulesDir, dir)
             for (const nestedDir of fs.readdirSync(subdir)) {
-              moveOptional(
-                path.join(subdir, nestedDir),
-                path.join(newPath, nestedDir),
-              )
+              moveOptional(path.join(subdir, nestedDir), path.join(newPath, nestedDir))
             }
           } else {
-            moveOptional(
-              path.join(nodeModulesDir, dir),
-              path.join(newNodeModulesDir, dir),
-            )
+            moveOptional(path.join(nodeModulesDir, dir), path.join(newNodeModulesDir, dir))
           }
         }
       } else {
         /**
-         * Try to move up the <napi> package directory to the parent
-         * "node_modules". This is a bit of a hack but it works around the
-         * problem that legacy npm versions does not respect
-         * "optionalDependencies" when "package-lock.json" presented, but it's
-         * fine to fail here.
+         * Try to move up the <napi> package directory to the parent "node_modules". This is a bit
+         * of a hack but it works around the problem that legacy npm versions does not respect
+         * "optionalDependencies" when "package-lock.json" presented, but it's fine to fail here.
          *
          * See also [npm/cli#4828](https://github.com/npm/cli/issues/4828)
          */
@@ -332,15 +308,9 @@ async function downloadDirectlyFromNPM(
   try {
     // No public registry fallback here: this writes an executable into the
     // project, so it must come from the registry the project configured.
-    fs.writeFileSync(
-      nodePath,
-      extractFileFromTarGzip(await fetch(url), subpath),
-    )
+    fs.writeFileSync(nodePath, extractFileFromTarGzip(await fetch(url), subpath))
   } catch (err) {
-    errorLog(
-      `Failed to download ${JSON.stringify(redact(url))}`,
-      getErrorMessage(err),
-    )
+    errorLog(`Failed to download ${JSON.stringify(redact(url))}`, getErrorMessage(err))
     throw err
   }
 }
@@ -390,31 +360,19 @@ export async function checkAndPreparePackage(
         )
       }
       const pkg = packageNameOrPackageJson
-      const packageJsonBuffer = await fetchPackageJson(
-        getRegistry(pkg),
-        pkg,
-        versionOrCheckVersion,
-      )
-      packageJson = JSON.parse(
-        packageJsonBuffer.toString('utf8'),
-      ) as PackageJson
+      const packageJsonBuffer = await fetchPackageJson(getRegistry(pkg), pkg, versionOrCheckVersion)
+      packageJson = JSON.parse(packageJsonBuffer.toString('utf8')) as PackageJson
     }
   } else {
     packageJson = packageNameOrPackageJson
-    if (
-      checkVersion === undefined &&
-      typeof versionOrCheckVersion === 'boolean'
-    ) {
+    if (checkVersion === undefined && typeof versionOrCheckVersion === 'boolean') {
       checkVersion = versionOrCheckVersion
     }
   }
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
 
-  const { napi, version = pkgVersion } = getNapiInfoFromPackageJson(
-    packageJson,
-    checkVersion,
-  )
+  const { napi, version = pkgVersion } = getNapiInfoFromPackageJson(packageJson, checkVersion)
 
   if (checkVersion && pkgVersion !== version) {
     throw new Error(
@@ -430,10 +388,7 @@ export async function checkAndPreparePackage(
     const pkg = `${napi.packageName}-${target}`
     const isWasm32Wasi = target === WASM32_WASI
 
-    if (
-      !optionalDependencies?.[pkg] &&
-      !(isWasm32Wasi && hasWasiTarget(napi.targets))
-    ) {
+    if (!optionalDependencies?.[pkg] && !(isWasm32Wasi && hasWasiTarget(napi.targets))) {
       continue
     }
 
@@ -455,12 +410,7 @@ export async function checkAndPreparePackage(
       // reached when the binding is missing: an installed package keeps working
       // even if its `optionalDependencies` uses a range.
       if (!NPM_PACKAGE_NAME.test(pkg) || !NPM_PINNED_VERSION.test(version)) {
-        throw new Error(
-          errorMessage(
-            `Refusing to install an unsafe package`,
-            `${pkg}@${version}`,
-          ),
-        )
+        throw new Error(errorMessage(`Refusing to install an unsafe package`, `${pkg}@${version}`))
       }
       if (isPnp()) {
         if (isWasm32Wasi) {
@@ -514,29 +464,17 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         installUsingNPM(name, pkg, version, target, subpath, nodePath)
         break
       } catch (err) {
-        errorLog(
-          `Failed to install package "${pkg}" using npm`,
-          getErrorMessage(err),
-        )
+        errorLog(`Failed to install package "${pkg}" using npm`, getErrorMessage(err))
 
         // If that didn't also work, then something is likely wrong with the "npm"
         // command. Attempt to compensate for this by manually downloading the
         // package from the npm registry over HTTP as a last resort.
         try {
-          await downloadDirectlyFromNPM(
-            getRegistry(pkg),
-            pkg,
-            version,
-            subpath,
-            nodePath,
-          )
+          await downloadDirectlyFromNPM(getRegistry(pkg), pkg, version, subpath, nodePath)
           break
         } catch (err) {
           throw new Error(
-            errorMessage(
-              `Failed to install package "${pkg}"`,
-              getErrorMessage(err),
-            ),
+            errorMessage(`Failed to install package "${pkg}"`, getErrorMessage(err)),
             { cause: err },
           )
         }

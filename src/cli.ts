@@ -3,21 +3,12 @@
 import fs from 'node:fs'
 
 import { PACKAGE_JSON } from './constants'
-
 import { checkAndPreparePackage, PackageJson } from './index.js'
 
-function readCwdPackage(
-  packageName: string,
-  packageVersion: string,
-): PackageJson | undefined {
+function readCwdPackage(packageName: string, packageVersion: string): PackageJson | undefined {
   try {
-    const packageJson = JSON.parse(
-      fs.readFileSync(PACKAGE_JSON, 'utf8'),
-    ) as PackageJson
-    if (
-      packageJson.name === packageName &&
-      packageJson.version === packageVersion
-    ) {
+    const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON, 'utf8')) as PackageJson
+    if (packageJson.name === packageName && packageJson.version === packageVersion) {
       return packageJson
     }
   } catch {}

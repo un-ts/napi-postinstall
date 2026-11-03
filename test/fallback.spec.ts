@@ -15,9 +15,7 @@ describe('fallback', () => {
   })
 
   it('should resolve napi package successfully and set skip env after processing', () => {
-    expect(fallback(require.resolve('unrs-resolver/package.json'))).toBe(
-      unrsResolver,
-    )
+    expect(fallback(require.resolve('unrs-resolver/package.json'))).toBe(unrsResolver)
     expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBe('1')
   })
 
@@ -39,9 +37,7 @@ describe('fallback', () => {
     fs.mkdirSync(path.dirname(bindingEntry), { recursive: true })
     fs.writeFileSync(bindingEntry, 'module.exports = { fake: true }')
 
-    const fixtureDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'napi-postinstall-'),
-    )
+    const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
     const packageJsonPath = path.join(fixtureDir, 'package.json')
 
     fs.writeFileSync(
@@ -70,9 +66,7 @@ describe('fallback', () => {
   })
 
   it('should reject a package without a WASI target', () => {
-    const fixtureDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'napi-postinstall-'),
-    )
+    const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
     const packageJsonPath = path.join(fixtureDir, 'package.json')
 
     fs.writeFileSync(
@@ -91,18 +85,14 @@ describe('fallback', () => {
     process.versions.webcontainer = '1'
 
     try {
-      expect(() => fallback(packageJsonPath, true)).toThrow(
-        'target is unavailable',
-      )
+      expect(() => fallback(packageJsonPath, true)).toThrow('target is unavailable')
     } finally {
       fs.rmSync(fixtureDir, { force: true, recursive: true })
     }
   })
 
   it('should reject non-WASI wasm32 targets', () => {
-    const fixtureDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), 'napi-postinstall-'),
-    )
+    const fixtureDir = fs.mkdtempSync(path.join(os.tmpdir(), 'napi-postinstall-'))
     const packageJsonPath = path.join(fixtureDir, 'package.json')
 
     fs.writeFileSync(
@@ -121,9 +111,7 @@ describe('fallback', () => {
     process.versions.webcontainer = '1'
 
     try {
-      expect(() => fallback(packageJsonPath, true)).toThrow(
-        'target is unavailable',
-      )
+      expect(() => fallback(packageJsonPath, true)).toThrow('target is unavailable')
     } finally {
       fs.rmSync(fixtureDir, { force: true, recursive: true })
     }

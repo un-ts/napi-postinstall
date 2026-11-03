@@ -12,11 +12,7 @@ import {
   NPMRC,
   PACKAGE_JSON,
 } from '../src/constants.js'
-import {
-  getNpmRegistry,
-  getProjectDir,
-  prepareNpmPrefix,
-} from '../src/helpers.js'
+import { getNpmRegistry, getProjectDir, prepareNpmPrefix } from '../src/helpers.js'
 
 // npm's own behaviour is covered end to end by the registry acceptance test, so
 // the unit tests here only drive our parsing and failure handling: a real spawn
@@ -60,21 +56,10 @@ describe('getProjectDir', () => {
   it('should strip the node_modules segments from the cwd', () => {
     expect(getProjectDir(path.join(root, 'node_modules', 'host'))).toBe(root)
     // the trailing separator is optional, and so is the package after it
-    expect(getProjectDir(`${path.join(root, 'node_modules')}${path.sep}`)).toBe(
-      root,
-    )
+    expect(getProjectDir(`${path.join(root, 'node_modules')}${path.sep}`)).toBe(root)
     expect(getProjectDir(path.join(root, 'node_modules'))).toBe(root)
     expect(
-      getProjectDir(
-        path.join(
-          root,
-          'node_modules',
-          '.pnpm',
-          'host@1.0.0',
-          'node_modules',
-          'host',
-        ),
-      ),
+      getProjectDir(path.join(root, 'node_modules', '.pnpm', 'host@1.0.0', 'node_modules', 'host')),
     ).toBe(root)
   })
 
@@ -90,14 +75,9 @@ describe('getProjectDir', () => {
       }),
     )
     const member = path.join(root, 'packages', 'a')
-    write(
-      path.join(member, PACKAGE_JSON),
-      JSON.stringify({ name: 'a', version: '1.0.0' }),
-    )
+    write(path.join(member, PACKAGE_JSON), JSON.stringify({ name: 'a', version: '1.0.0' }))
 
-    expect(getProjectDir(path.join(member, 'node_modules', 'host'))).toBe(
-      member,
-    )
+    expect(getProjectDir(path.join(member, 'node_modules', 'host'))).toBe(member)
   })
 
   // `C:` is drive-relative, so a path at the root of `node_modules` has to come
@@ -203,19 +183,14 @@ describe('getNpmRegistry', () => {
   it('should prefer the registry configured for the package scope', () => {
     write(
       path.join(root, NPMRC),
-      [
-        'registry=http://127.0.0.1:1/npm',
-        '@corp:registry=https://npm.corp.test/',
-      ].join('\n'),
+      ['registry=http://127.0.0.1:1/npm', '@corp:registry=https://npm.corp.test/'].join('\n'),
     )
     config({
       '@corp:registry': 'https://npm.corp.test/',
       registry: 'http://127.0.0.1:1/npm',
     })
 
-    expect(getNpmRegistry('@corp/binding-linux-x64-gnu', root)).toBe(
-      'https://npm.corp.test/',
-    )
+    expect(getNpmRegistry('@corp/binding-linux-x64-gnu', root)).toBe('https://npm.corp.test/')
     expect(getNpmRegistry('rolldown', root)).toBe('http://127.0.0.1:1/npm/')
   })
 
@@ -237,12 +212,7 @@ describe('install arguments', () => {
     ]) {
       expect(NPM_PACKAGE_NAME.test(pkg)).toBe(true)
     }
-    for (const version of [
-      '1.12.2',
-      '1.0.0-beta.1+build',
-      '0.3.5',
-      '0.0.0-development',
-    ]) {
+    for (const version of ['1.12.2', '1.0.0-beta.1+build', '0.3.5', '0.0.0-development']) {
       expect(NPM_PINNED_VERSION.test(version)).toBe(true)
     }
   })

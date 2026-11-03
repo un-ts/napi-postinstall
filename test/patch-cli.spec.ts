@@ -43,9 +43,7 @@ describe('napi-patch', () => {
     expect(patched).toContain(
       'if (!nativeBinding && process.env["SKIP_FAKE_HOST_FALLBACK"] !== \'1\') {',
     )
-    expect(patched).toContain(
-      "typeof __napiLoadedBindingTarget !== 'undefined'",
-    )
+    expect(patched).toContain("typeof __napiLoadedBindingTarget !== 'undefined'")
     expect(patched).not.toContain('webcontainer')
   })
 
@@ -72,9 +70,7 @@ describe('napi-patch', () => {
 }`
 
     patch({ name: 'fake-host', append: extra })
-    expect(fs.readFileSync(path.join(root, 'index.js'), 'utf8')).toContain(
-      extra,
-    )
+    expect(fs.readFileSync(path.join(root, 'index.js'), 'utf8')).toContain(extra)
   })
 
   it('should not append when the fallback is already present', () => {

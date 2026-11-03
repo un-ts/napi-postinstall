@@ -60,10 +60,7 @@ const setup = () => {
   return { hostDir, packageJson, root }
 }
 
-const mockNpmInstall = (
-  withBinary: boolean,
-  registry = 'http://127.0.0.1:1/',
-) => {
+const mockNpmInstall = (withBinary: boolean, registry = 'http://127.0.0.1:1/') => {
   vi.mocked(execSync).mockImplementation((command, options) => {
     if (typeof command !== 'string' || !command.startsWith('npm install')) {
       return JSON.stringify({ registry })
@@ -74,16 +71,8 @@ const mockNpmInstall = (
       throw new Error(`unexpected command: ${command}`)
     }
 
-    const installDir = path.resolve(
-      String(options?.cwd ?? process.cwd()),
-      prefix,
-    )
-    const bindingDir = path.join(
-      installDir,
-      'node_modules',
-      '@fake',
-      `binding-${TARGET}`,
-    )
+    const installDir = path.resolve(String(options?.cwd ?? process.cwd()), prefix)
+    const bindingDir = path.join(installDir, 'node_modules', '@fake', `binding-${TARGET}`)
     write(
       path.join(bindingDir, 'package.json'),
       JSON.stringify({ name: BINDING_PKG, version: VERSION, main: SUBPATH }),
@@ -119,13 +108,9 @@ describe('runtime fallback install', () => {
     process.chdir(root)
 
     try {
-      await expect(
-        checkAndPreparePackage(packageJson, false),
-      ).resolves.toBeUndefined()
+      await expect(checkAndPreparePackage(packageJson, false)).resolves.toBeUndefined()
       expect(fs.existsSync(path.join(hostDir, SUBPATH))).toBe(true)
-      expect(fs.existsSync(path.join(root, 'node_modules', BINDING_PKG))).toBe(
-        true,
-      )
+      expect(fs.existsSync(path.join(root, 'node_modules', BINDING_PKG))).toBe(true)
     } finally {
       process.chdir(cwd)
       fs.rmSync(root, { recursive: true, force: true })
@@ -167,12 +152,8 @@ describe('runtime fallback install', () => {
     process.chdir(root)
 
     try {
-      await expect(
-        checkAndPreparePackage(packageJson, false),
-      ).resolves.toBeUndefined()
-      expect(fs.readFileSync(path.join(hostDir, SUBPATH), 'utf8')).toBe(
-        'downloaded binary',
-      )
+      await expect(checkAndPreparePackage(packageJson, false)).resolves.toBeUndefined()
+      expect(fs.readFileSync(path.join(hostDir, SUBPATH), 'utf8')).toBe('downloaded binary')
     } finally {
       await new Promise<void>(resolve => {
         server.close(() => resolve())
@@ -207,12 +188,8 @@ describe('runtime fallback install', () => {
     process.chdir(root)
 
     try {
-      await expect(
-        checkAndPreparePackage(packageJson, false),
-      ).resolves.toBeUndefined()
-      expect(fs.readFileSync(path.join(hostDir, SUBPATH), 'utf8')).toBe(
-        'downloaded binary',
-      )
+      await expect(checkAndPreparePackage(packageJson, false)).resolves.toBeUndefined()
+      expect(fs.readFileSync(path.join(hostDir, SUBPATH), 'utf8')).toBe('downloaded binary')
       // an unread response keeps its keep-alive socket busy and the process alive
       expect(Object.keys(http.globalAgent.sockets)).toEqual([])
     } finally {

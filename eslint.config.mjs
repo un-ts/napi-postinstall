@@ -2,7 +2,15 @@ import base from '@1stg/eslint-config'
 import nodeDependencies from 'eslint-plugin-node-dependencies'
 
 export default [
-  ...base,
+  {
+    ignores: [
+      '**/package-lock.json',
+      '**/pnpm-lock.yaml',
+      '**/yarn.lock',
+      'test/fixtures/**/node_modules/**',
+    ],
+  },
+  ...(await base),
   ...nodeDependencies.configs['flat/recommended'],
   {
     rules: {
@@ -10,20 +18,6 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       'sonarjs/file-permissions': 'off',
       'sonarjs/no-os-command-from-path': 'off',
-      'unicorn-x/import-style': 'off',
-      'unicorn-x/prefer-top-level-await': 'off',
-    },
-  },
-  {
-    files: ['src/patch.ts'],
-    rules: {
-      'n/hashbang': 'off',
-    },
-  },
-  {
-    files: ['**/*.tsx'],
-    rules: {
-      '@eslint-react/jsx-uses-react': 'off',
     },
   },
 ]

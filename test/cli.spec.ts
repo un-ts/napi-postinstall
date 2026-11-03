@@ -58,11 +58,7 @@ describe('cli', () => {
 
     await loadCli()
 
-    expect(checkAndPreparePackage).toHaveBeenCalledWith(
-      'other-host',
-      '2.0.0',
-      false,
-    )
+    expect(checkAndPreparePackage).toHaveBeenCalledWith('other-host', '2.0.0', false)
   })
 
   it('should surface failures through the exit code', async () => {

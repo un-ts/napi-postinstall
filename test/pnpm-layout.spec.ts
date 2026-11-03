@@ -21,11 +21,7 @@ const write = (file: string, content: string) => {
 // a junction there, which does not need it
 const link = (target: string, linkPath: string) => {
   fs.mkdirSync(path.dirname(linkPath), { recursive: true })
-  fs.symlinkSync(
-    target,
-    linkPath,
-    process.platform === 'win32' ? 'junction' : 'dir',
-  )
+  fs.symlinkSync(target, linkPath, process.platform === 'win32' ? 'junction' : 'dir')
 }
 
 describe('pnpm-style layout', () => {
@@ -48,11 +44,7 @@ describe('pnpm-style layout', () => {
       const platformTarget = Array.isArray(target) ? target[0] : target
       const bindingName = `@fake/binding-${platformTarget}`
       const subpath = `${BINARY_NAME}.${platformTarget}.node`
-      const bindingDir = path.join(
-        store,
-        'node_modules',
-        `fake-binding-${platformTarget}`,
-      )
+      const bindingDir = path.join(store, 'node_modules', `fake-binding-${platformTarget}`)
 
       write(
         path.join(bindingDir, PACKAGE_JSON),
@@ -73,31 +65,19 @@ describe('pnpm-style layout', () => {
         }),
       )
       // the binding is reached through a scope symlink next to the host
-      link(
-        bindingDir,
-        path.join(
-          consumer,
-          'node_modules',
-          '@fake',
-          `binding-${platformTarget}`,
-        ),
-      )
+      link(bindingDir, path.join(consumer, 'node_modules', '@fake', `binding-${platformTarget}`))
 
       process.chdir(hostDir)
       // the registry points at a closed port, so a regression fails fast instead
       // of reaching the public one, like the offline sandbox in the issue
       process.env.npm_config_registry = 'http://127.0.0.1:1/'
-      await expect(
-        checkAndPreparePackage(HOST, VERSION),
-      ).resolves.toBeUndefined()
+      await expect(checkAndPreparePackage(HOST, VERSION)).resolves.toBeUndefined()
 
       expect(consoleError).not.toHaveBeenCalled()
       // neither fallback may have run: the nested install would use this prefix
       // and grow a `node_modules` inside the host, the download would write the
       // binary into the host package itself
-      expect(
-        fs.existsSync(path.join(consumer, 'node_modules', '.napi-postinstall')),
-      ).toBe(false)
+      expect(fs.existsSync(path.join(consumer, 'node_modules', '.napi-postinstall'))).toBe(false)
       expect(fs.existsSync(path.join(hostDir, 'node_modules'))).toBe(false)
       expect(fs.existsSync(path.join(hostDir, subpath))).toBe(false)
     } finally {

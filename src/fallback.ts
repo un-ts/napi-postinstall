@@ -14,23 +14,17 @@ import type { PackageJson } from './types.js'
 
 /**
  * Fallback for webcontainer and docker environments like
- * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  *
  * @param packageJsonPath The absolute path to the package.json file.
  * @param checkVersion Whether to check version matching
+ * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  */
-function fallback<T = unknown>(
-  packageJsonPath: string,
-  checkVersion?: boolean,
-) {
+function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) {
   const packageJson = require(packageJsonPath) as PackageJson
 
   const { name, version: pkgVersion, optionalDependencies } = packageJson
 
-  const { napi, version = pkgVersion } = getNapiInfoFromPackageJson(
-    packageJson,
-    checkVersion,
-  )
+  const { napi, version = pkgVersion } = getNapiInfoFromPackageJson(packageJson, checkVersion)
 
   if (checkVersion && pkgVersion !== version) {
     throw new Error(
@@ -45,14 +39,9 @@ function fallback<T = unknown>(
 
     // napi keeps the WASI fallback out of `optionalDependencies` when it is not
     // the only target, so also accept the configured `napi.targets`.
-    if (
-      !optionalDependencies?.[bindingPkgName] &&
-      !hasWasiTarget(napi.targets)
-    ) {
+    if (!optionalDependencies?.[bindingPkgName] && !hasWasiTarget(napi.targets)) {
       throw new Error(
-        errorMessage(
-          `\`${WASM32_WASI}\` target is unavailable for \`${name}\` v${version}`,
-        ),
+        errorMessage(`\`${WASM32_WASI}\` target is unavailable for \`${name}\` v${version}`),
       )
     }
 
@@ -69,9 +58,7 @@ function fallback<T = unknown>(
 
       const bindingPkg = `${bindingPkgName}@${version}`
 
-      console.log(
-        errorMessage(`Downloading \`${bindingPkg}\` on WebContainer...`),
-      )
+      console.log(errorMessage(`Downloading \`${bindingPkg}\` on WebContainer...`))
 
       execFileSync('pnpm', ['i', bindingPkg], {
         cwd: baseDir,
@@ -86,14 +73,10 @@ function fallback<T = unknown>(
 
   const pkgDir = path.dirname(packageJsonPath)
 
-  execFileSync(
-    process.execPath,
-    [cliPath, name, pkgVersion, checkVersion ? '1' : '0'],
-    {
-      cwd: pkgDir,
-      stdio: 'inherit',
-    },
-  )
+  execFileSync(process.execPath, [cliPath, name, pkgVersion, checkVersion ? '1' : '0'], {
+    cwd: pkgDir,
+    stdio: 'inherit',
+  })
 
   process.env[getSkipFallbackEnv(name)] = '1'
 
