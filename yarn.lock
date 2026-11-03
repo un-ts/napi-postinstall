@@ -55,9 +55,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@1stg/eslint-config@npm:^12.1.0":
-  version: 12.1.0
-  resolution: "@1stg/eslint-config@npm:12.1.0"
+"@1stg/eslint-config@npm:^12.2.0":
+  version: 12.2.0
+  resolution: "@1stg/eslint-config@npm:12.2.0"
   dependencies:
     eslint-plugin-jsonc: "npm:^3.4.2"
     eslint-plugin-mdx: "npm:^3.8.2"
@@ -86,7 +86,7 @@ __metadata:
       optional: true
     typescript-eslint:
       optional: true
-  checksum: 10c0/d2c8a2598028a99d2a470b8df6ff81fe874d7f9b30953c6a8487862436e1d557076dbbd5e3486963b1bba8e5ab997daf8a0ea7a236cd29b0a029056bfff3fba7
+  checksum: 10c0/fc90eeaf09dddc5414541ac79a697dd8966940a783882fa85090b97a3fb8e35af0d3d3cbe932c634f21392c95c6038301345e67afdc0335f5ec47f4b0f60f695
   languageName: node
   linkType: hard
 
@@ -7971,7 +7971,7 @@ __metadata:
   dependencies:
     "@1stg/browserslist-config": "npm:^3.0.0"
     "@1stg/common-config": "npm:^17.0.0"
-    "@1stg/eslint-config": "npm:^12.1.0"
+    "@1stg/eslint-config": "npm:^12.2.0"
     "@1stg/oxlint-config": "npm:^1.2.0"
     "@1stg/postcss-config": "npm:^8.0.0"
     "@1stg/stylelint-config": "npm:^8.0.0"
