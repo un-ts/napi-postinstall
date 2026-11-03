@@ -8001,6 +8001,7 @@ __metadata:
     postcss-html: "npm:^2.0.0"
     postcss-markdown: "npm:^2.0.0"
     prettier: "npm:^3.6.2"
+    prettier-plugin-ini: "npm:^1.3.0"
     react: "npm:^19.1.0"
     react-dom: "npm:^19.1.0"
     react-router-dom: "npm:^7.6.3"
@@ -9459,6 +9460,15 @@ __metadata:
   dependencies:
     fast-diff: "npm:^1.1.2"
   checksum: 10c0/91cea965681bc5f62c9d26bd3ca6358b81557261d4802e96ec1cf0acbd99d4b61632d53320cd2c3ec7d7f7805a81345644108a41ef46ddc9688e783a9ac792d1
+  languageName: node
+  linkType: hard
+
+"prettier-plugin-ini@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "prettier-plugin-ini@npm:1.3.0"
+  dependencies:
+    prettier: "npm:>=3.0.0-alpha.3"
+  checksum: 10c0/db5580a903cf5dadd89f33a7317aa2cc13da6b81c623a5a8786b2610521be834516ca393c1a1535603f55435f95ab372b9199bca1e8091600dad523cd3ebe4b3
   languageName: node
   linkType: hard
 
