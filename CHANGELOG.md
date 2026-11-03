@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.3.8
+
+### Patch Changes
+
+- [#85](https://github.com/un-ts/napi-postinstall/pull/85) [`251a241`](https://github.com/un-ts/napi-postinstall/commit/251a24175b8135149966df83a0b2700c30678c75) Thanks [@DDuarte](https://github.com/DDuarte)! - fix: consume redirect and non-200 responses so the keep-alive socket is released and the process can exit
+
 ## 0.3.7
 
 ### Patch Changes
