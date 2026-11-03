@@ -52,7 +52,9 @@ function fetch(url: string) {
           return reject(new Error(`Server responded with ${res.statusCode}`))
         }
         const chunks: Buffer[] = []
-        res.on('data', (chunk: Buffer) => chunks.push(chunk))
+        res.on('data', (chunk: Buffer) => {
+          chunks.push(chunk)
+        })
         res.on('end', () => resolve(Buffer.concat(chunks)))
       })
       .on('error', reject)
@@ -104,12 +106,13 @@ function extractFileFromTarGzip(buffer: Buffer, subpath: string) {
     const name = str(offset, 100)
     const size = Number.parseInt(str(offset + 124, 12), 8)
     offset += 512
-    if (!Number.isNaN(size)) {
-      if (name === subpath) {
-        return buffer.subarray(offset, offset + size)
-      }
-      offset += (size + 511) & ~511
+    if (Number.isNaN(size)) {
+      continue
     }
+    if (name === subpath) {
+      return buffer.subarray(offset, offset + size)
+    }
+    offset += (size + 511) & ~511
   }
   throw new Error(errorMessage(`Could not find \`${subpath}\` in archive`))
 }

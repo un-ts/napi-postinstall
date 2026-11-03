@@ -92,6 +92,7 @@
     "eslint-plugin-node-dependencies": "^2.0.0",
     "eslint-plugin-react-hooks": "^7.0.0",
     "eslint-plugin-sonarjs": "^4.2.2",
+    "eslint-plugin-unicorn": "^79.0.0",
     "eslint-plugin-yml": "^3.9.0",
     "github-markdown-css": "^5.8.1",
     "nano-staged": "^1.0.0",
