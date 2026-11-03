@@ -4,6 +4,12 @@ export default defineConfig({
   noMagicNumbers: false,
   overrides: [
     {
+      files: ['src/helpers.ts'],
+      rules: {
+        eqeqeq: 'off',
+      },
+    },
+    {
       files: ['test/**'],
       rules: {
         'import/default': 'off',

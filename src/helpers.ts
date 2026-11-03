@@ -295,8 +295,7 @@ function isMuslFromReport() {
   }
   if (
     'header' in report &&
-    report.header !== null &&
-    report.header !== undefined &&
+    report.header != null &&
     typeof report.header === 'object' &&
     'glibcVersionRuntime' in report.header &&
     report.header.glibcVersionRuntime
