@@ -55,19 +55,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@1stg/eslint-config@npm:^12.0.0":
-  version: 12.0.2
-  resolution: "@1stg/eslint-config@npm:12.0.2"
+"@1stg/eslint-config@npm:^12.1.0":
+  version: 12.1.0
+  resolution: "@1stg/eslint-config@npm:12.1.0"
   dependencies:
     eslint-plugin-jsonc: "npm:^3.4.2"
     eslint-plugin-mdx: "npm:^3.8.2"
     eslint-plugin-oxlint: "npm:^1.89.0"
   peerDependencies:
-    eslint: ^9.39.4 || ^10.0.1
+    eslint: ^10.4.0
     eslint-plugin-markup: ^2.1.0
     eslint-plugin-regexp: ^3.3.1
     eslint-plugin-sonarjs: ^4.2.2
     eslint-plugin-toml: ^1.5.0
+    eslint-plugin-unicorn: ^79.0.0
     eslint-plugin-yml: ^3.9.0
     typescript-eslint: ^8.72.0
   peerDependenciesMeta:
@@ -79,11 +80,13 @@ __metadata:
       optional: true
     eslint-plugin-toml:
       optional: true
+    eslint-plugin-unicorn:
+      optional: true
     eslint-plugin-yml:
       optional: true
     typescript-eslint:
       optional: true
-  checksum: 10c0/ab8d384a5b85618d1345ebcd23923e6182f822320b2f666e4af0f7918e1ce0589f848ff82acb6e5fc3190513384500b0517a609aa444af78318670cd718f2aa9
+  checksum: 10c0/d2c8a2598028a99d2a470b8df6ff81fe874d7f9b30953c6a8487862436e1d557076dbbd5e3486963b1bba8e5ab997daf8a0ea7a236cd29b0a029056bfff3fba7
   languageName: node
   linkType: hard
 
@@ -142,18 +145,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@1stg/oxlint-config@npm:^1.0.0":
-  version: 1.1.0
-  resolution: "@1stg/oxlint-config@npm:1.1.0"
+"@1stg/oxlint-config@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@1stg/oxlint-config@npm:1.2.0"
   dependencies:
     "@pkgr/utils": "npm:^4.1.0"
+    oxlint-config-recommended: "npm:^1.2.1"
   peerDependencies:
-    oxlint: ">=1.80.0"
+    oxlint: ">=1.89.0"
     oxlint-tsgolint: ^7.0.2005
   peerDependenciesMeta:
     oxlint-tsgolint:
       optional: true
-  checksum: 10c0/77821151d4b81e9fd39e206e093b92ca4db95f920816d496312497db90876272f83addb06e01668096a9a426b87b06e7b2de684118491085f8d12ef946d2e908
+  checksum: 10c0/50e3c456dd2308aa89e94377d008e82e706cc2be3e134a6de2cbfdf1927225ec5e10b673fbf89f1f433c3cddb284760fa9c3254744bd58e04beee14a18727399
   languageName: node
   linkType: hard
 
@@ -7967,6 +7971,8 @@ __metadata:
   dependencies:
     "@1stg/browserslist-config": "npm:^3.0.0"
     "@1stg/common-config": "npm:^17.0.0"
+    "@1stg/eslint-config": "npm:^12.1.0"
+    "@1stg/oxlint-config": "npm:^1.2.0"
     "@1stg/postcss-config": "npm:^8.0.0"
     "@1stg/stylelint-config": "npm:^8.0.0"
     "@changesets/changelog-github": "npm:^1.0.1"
@@ -8287,6 +8293,15 @@ __metadata:
   bin:
     oxfmt: bin/oxfmt
   checksum: 10c0/659b6cef1e521248372f48951920802fba67bd56b603143552c6d049969e940addc22900deb95588c4301b4f0ecfb418f96ff2eed78d7530972e9739fe4ece03
+  languageName: node
+  linkType: hard
+
+"oxlint-config-recommended@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "oxlint-config-recommended@npm:1.2.1"
+  peerDependencies:
+    oxlint: ">=1.89.0"
+  checksum: 10c0/b4ee301ff3288088c00c23e85601b9e63e4839d9408fac166a9b339421dcb09047fb49fbdd2073bd5ae48f1bfe5c82bc86b456acc4d04fd3b5b19ec302cf4b4b
   languageName: node
   linkType: hard
 

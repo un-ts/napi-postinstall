@@ -65,6 +65,8 @@
   "devDependencies": {
     "@1stg/browserslist-config": "^3.0.0",
     "@1stg/common-config": "^17.0.0",
+    "@1stg/eslint-config": "^12.1.0",
+    "@1stg/oxlint-config": "^1.2.0",
     "@1stg/postcss-config": "^8.0.0",
     "@1stg/stylelint-config": "^8.0.0",
     "@changesets/changelog-github": "^1.0.1",
@@ -120,6 +122,8 @@
     "yarn-berry-deduplicate": "^7.0.0"
   },
   "resolutions": {
+    "@1stg/eslint-config": "^12.1.0",
+    "@1stg/oxlint-config": "^1.2.0",
     "napi-postinstall": "workspace:*",
     "prettier": "^3.6.2"
   },
