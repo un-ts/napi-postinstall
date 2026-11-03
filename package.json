@@ -59,10 +59,10 @@
     "version": "changeset version && yarn --no-immutable && yarn test -u"
   },
   "devDependencies": {
-    "@1stg/browserslist-config": "^2.1.4",
-    "@1stg/common-config": "^16.0.0",
-    "@1stg/postcss-config": "^7.0.0",
-    "@1stg/stylelint-config": "^7.0.0",
+    "@1stg/browserslist-config": "^3.0.0",
+    "@1stg/common-config": "^17.0.0",
+    "@1stg/postcss-config": "^8.0.0",
+    "@1stg/stylelint-config": "^8.0.0",
     "@changesets/changelog-github": "^1.0.1",
     "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.0.0",
@@ -70,7 +70,7 @@
     "@mdx-js/rollup": "^3.1.0",
     "@shikijs/rehype": "^4.0.0",
     "@types/mdx": "^2.0.13",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "@types/pnpapi": "^0.0.5",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
