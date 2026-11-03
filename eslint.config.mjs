@@ -2,14 +2,6 @@ import base from '@1stg/eslint-config'
 import nodeDependencies from 'eslint-plugin-node-dependencies'
 
 export default [
-  {
-    ignores: [
-      '**/package-lock.json',
-      '**/pnpm-lock.yaml',
-      '**/yarn.lock',
-      'test/fixtures/**/node_modules/**',
-    ],
-  },
   ...(await base),
   ...nodeDependencies.configs['flat/recommended'],
   {
