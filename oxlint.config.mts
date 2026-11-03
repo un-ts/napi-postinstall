@@ -10,6 +10,18 @@ export default defineConfig({
   },
   overrides: [
     {
+      files: ['src/index.ts'],
+      rules: {
+        'no-await-in-loop': 'off',
+      },
+    },
+    {
+      files: ['docs/**'],
+      rules: {
+        'import/no-unassigned-import': 'off',
+      },
+    },
+    {
       files: ['test/**'],
       rules: {
         'import/default': 'off',

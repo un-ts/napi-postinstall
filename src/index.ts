@@ -475,10 +475,10 @@ this. If that fails, you need to remove the "--no-optional" flag to use ${name}.
         try {
           await downloadDirectlyFromNPM(getRegistry(pkg), pkg, version, subpath, nodePath)
           break
-        } catch (err) {
+        } catch (downloadError) {
           throw new Error(
-            errorMessage(`Failed to install package "${pkg}"`, getErrorMessage(err)),
-            { cause: err },
+            errorMessage(`Failed to install package "${pkg}"`, getErrorMessage(downloadError)),
+            { cause: downloadError },
           )
         }
       }

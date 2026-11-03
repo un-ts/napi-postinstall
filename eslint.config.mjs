@@ -1,9 +1,9 @@
 import { defineConfig } from '@1stg/eslint-config'
-import nodeDependencies from 'eslint-plugin-node-dependencies'
+import { configs } from 'eslint-plugin-node-dependencies'
 
 export default defineConfig({
   configs: [
-    ...nodeDependencies.configs['flat/recommended'],
+    ...configs['flat/recommended'],
     {
       files: ['src/patch.ts'],
       rules: {
