@@ -2,13 +2,10 @@ import { defineConfig } from '@1stg/oxlint-config'
 
 export default defineConfig({
   noMagicNumbers: false,
+  rules: {
+    eqeqeq: ['error', 'always', { null: 'ignore' }],
+  },
   overrides: [
-    {
-      files: ['src/helpers.ts'],
-      rules: {
-        eqeqeq: 'off',
-      },
-    },
     {
       files: ['test/**'],
       rules: {
