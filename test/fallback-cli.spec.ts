@@ -32,15 +32,10 @@ describe('fallback CLI', () => {
         },
       }),
     )
-    fs.writeFileSync(
-      path.join(pkgDir, 'index.js'),
-      'module.exports = { ok: true }',
-    )
+    fs.writeFileSync(path.join(pkgDir, 'index.js'), 'module.exports = { ok: true }')
 
     try {
-      expect(
-        fallback<{ ok: boolean }>(path.join(pkgDir, 'package.json')),
-      ).toEqual({ ok: true })
+      expect(fallback<{ ok: boolean }>(path.join(pkgDir, 'package.json'))).toEqual({ ok: true })
       expect(execFileSync).toHaveBeenCalledWith(
         process.execPath,
         [expect.stringMatching(/lib[\\/]cli\.js$/), 'fake-host', '1.0.0', '0'],

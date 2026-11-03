@@ -3,13 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import {
-  DEFAULT_NPM_REGISTRY,
-  LOG_PREFIX,
-  NPMRC,
-  PACKAGE_JSON,
-  WASM32_WASI,
-} from './constants.js'
+import { DEFAULT_NPM_REGISTRY, LOG_PREFIX, NPMRC, PACKAGE_JSON, WASM32_WASI } from './constants.js'
 import { parseTriple } from './target.js'
 import type { NapiInfo, PackageJson, Platform } from './types.js'
 
@@ -23,17 +17,16 @@ function stripNodeModules(dir: string) {
 /**
  * The directory holding the `.npmrc` that applies to the current install.
  *
- * npm only reads project config from `<localPrefix>/.npmrc`, and it resolves no
- * prefix at all when its cwd is inside `node_modules`. For lifecycle scripts it
- * exports the prefix it did resolve, so that value wins; otherwise fall back to
- * the directory that owns the `node_modules` the package was installed into,
- * which is the base case of the same rule and covers pnpm and yarn.
+ * Npm only reads project config from `<localPrefix>/.npmrc`, and it resolves no prefix at all when
+ * its cwd is inside `node_modules`. For lifecycle scripts it exports the prefix it did resolve, so
+ * that value wins; otherwise fall back to the directory that owns the `node_modules` the package
+ * was installed into, which is the base case of the same rule and covers pnpm and yarn.
  *
- * Workspace roots are deliberately not re-derived: matching `workspaces` globs
- * and `pnpm-workspace.yaml` would mean reimplementing npm's semantics, and an
- * approximation can hand the nested install another project's registry and
- * credentials. Revisit it if there is user feedback that the workspace root
- * config is missing for an install inside a member's `node_modules`.
+ * Workspace roots are deliberately not re-derived: matching `workspaces` globs and
+ * `pnpm-workspace.yaml` would mean reimplementing npm's semantics, and an approximation can hand
+ * the nested install another project's registry and credentials. Revisit it if there is user
+ * feedback that the workspace root config is missing for an install inside a member's
+ * `node_modules`.
  */
 export function getProjectDir(cwd = process.cwd()) {
   const localPrefix = process.env.npm_config_local_prefix
@@ -47,13 +40,13 @@ export function getProjectDir(cwd = process.cwd()) {
 }
 
 /**
- * Prepares `dir` to be used as an npm prefix for a nested install: an empty
- * `package.json` so npm does not apply the caller's `devEngines`, and a copy of
- * the project `.npmrc` so the install keeps its registry and credentials.
+ * Prepares `dir` to be used as an npm prefix for a nested install: an empty `package.json` so npm
+ * does not apply the caller's `devEngines`, and a copy of the project `.npmrc` so the install keeps
+ * its registry and credentials.
  *
- * npm reads project config from the prefix but resolves relative values in it
- * against its cwd, so the caller has to run npm from the project directory for
- * settings like `cafile=./certs/ca.pem` to keep pointing at the project.
+ * Npm reads project config from the prefix but resolves relative values in it against its cwd, so
+ * the caller has to run npm from the project directory for settings like `cafile=./certs/ca.pem` to
+ * keep pointing at the project.
  *
  * @see https://github.com/un-ts/napi-postinstall/issues/37
  * @see https://github.com/un-ts/napi-postinstall/issues/43
@@ -81,11 +74,10 @@ export function prepareNpmPrefix(dir: string, projectDir = getProjectDir()) {
 /**
  * The registry npm would use for `pkg`, honouring `@scope:registry`.
  *
- * One `npm config ls --json` answers both, so a scoped package does not cost a
- * second npm start-up. The lookup runs in a temporary prefix because npm
- * validates `devEngines` against its prefix, so asking from the project
- * directory can fail with EBADDEVENGINES (#70); the nested install does not need
- * this, it gets the project `.npmrc` itself.
+ * One `npm config ls --json` answers both, so a scoped package does not cost a second npm start-up.
+ * The lookup runs in a temporary prefix because npm validates `devEngines` against its prefix, so
+ * asking from the project directory can fail with EBADDEVENGINES (#70); the nested install does not
+ * need this, it gets the project `.npmrc` itself.
  */
 export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
   let tempDir: string
@@ -109,9 +101,7 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
     ) as Record<string, string | undefined>
     const scope = pkg?.startsWith('@') ? pkg.split('/')[0] : undefined
     const registry =
-      (scope && config[`${scope}:registry`]) ||
-      config.registry ||
-      DEFAULT_NPM_REGISTRY
+      (scope && config[`${scope}:registry`]) || config.registry || DEFAULT_NPM_REGISTRY
     return registry.endsWith('/') ? registry : `${registry}/`
   } catch (error) {
     errorLog(
@@ -128,19 +118,15 @@ export function getNpmRegistry(pkg?: string, projectDir = getProjectDir()) {
 }
 
 /**
- * `renameSync`, falling back to a copy when the destination is on another
- * filesystem: the temporary directory lives under the project, while a linked
- * host package can live on another volume.
+ * `renameSync`, falling back to a copy when the destination is on another filesystem: the temporary
+ * directory lives under the project, while a linked host package can live on another volume.
  */
 export function movePath(from: string, to: string) {
   try {
     fs.renameSync(from, to)
   } catch (error) {
     // `cpSync` needs Node 16.7+, older versions keep the previous failure
-    if (
-      (error as NodeJS.ErrnoException).code !== 'EXDEV' ||
-      typeof fs.cpSync !== 'function'
-    ) {
+    if ((error as NodeJS.ErrnoException).code !== 'EXDEV' || typeof fs.cpSync !== 'function') {
       throw error
     }
     const isDir = fs.lstatSync(from).isDirectory()
@@ -162,13 +148,10 @@ export function movePath(from: string, to: string) {
 /**
  * Removes `dir`, which may be a file, a directory or a symlink.
  *
- * Pass `isDir` when the caller already knows, so the type is not looked up again;
- * the recursive calls always do.
+ * Pass `isDir` when the caller already knows, so the type is not looked up again; the recursive
+ * calls always do.
  */
-export function removeRecursive(
-  dir: string,
-  isDir = fs.lstatSync(dir).isDirectory(),
-) {
+export function removeRecursive(dir: string, isDir = fs.lstatSync(dir).isDirectory()) {
   if (!isDir) {
     fs.unlinkSync(dir)
     return
@@ -193,17 +176,15 @@ export function removeRecursive(
 /**
  * Resolves `specifier` from the package the postinstall belongs to.
  *
- * That is the package needing the binding: npm, pnpm and yarn all run a lifecycle
- * script with the cwd set to it, and its `node_modules` is the one the binding was
- * installed into. Resolving from our own location instead fails with a pnpm-style
- * layout and `hoist=false`, where the binding is a sibling of the host while this
- * package can be linked from a different tree.
+ * That is the package needing the binding: npm, pnpm and yarn all run a lifecycle script with the
+ * cwd set to it, and its `node_modules` is the one the binding was installed into. Resolving from
+ * our own location instead fails with a pnpm-style layout and `hoist=false`, where the binding is a
+ * sibling of the host while this package can be linked from a different tree.
  *
- * `checkAndPreparePackage` and the CLI are public, so a caller that runs from
- * somewhere else has to cd into that package first. The own-location lookup is not
- * kept as a fallback: from a lifecycle script it resolves to the same tree, and
- * from anywhere else it would return a copy seen from this package's tree rather
- * than the caller's.
+ * `checkAndPreparePackage` and the CLI are public, so a caller that runs from somewhere else has to
+ * cd into that package first. The own-location lookup is not kept as a fallback: from a lifecycle
+ * script it resolves to the same tree, and from anywhere else it would return a copy seen from this
+ * package's tree rather than the caller's.
  *
  * @see https://github.com/un-ts/napi-postinstall/issues/53
  */
@@ -224,13 +205,9 @@ export function getNapiInfoFromPackageJson(
   packageJson: PackageJson,
   checkVersion?: boolean,
 ): NapiInfo
-export function getNapiInfoFromPackageJson(
-  packageJson: PackageJson,
-  checkVersion?: boolean,
-) {
+export function getNapiInfoFromPackageJson(packageJson: PackageJson, checkVersion?: boolean) {
   const { name, napi: napi_, optionalDependencies } = packageJson
 
-  // eslint-disable-next-line sonarjs/deprecation
   const targets = napi_?.targets ?? napi_?.triples?.additional
 
   if (!targets?.length) {
@@ -243,9 +220,7 @@ export function getNapiInfoFromPackageJson(
 
   const napi = napi_!
 
-  // eslint-disable-next-line sonarjs/deprecation
   napi.binaryName ??= napi.name
-  // eslint-disable-next-line sonarjs/deprecation
   napi.packageName ??= napi.package?.name ?? name
 
   napi.targets = targets
@@ -298,8 +273,7 @@ function isMusl() {
   return musl
 }
 
-const isFileMusl = (f: string) =>
-  f.includes('libc.musl-') || f.includes('ld-musl-')
+const isFileMusl = (f: string) => f.includes('libc.musl-') || f.includes('ld-musl-')
 
 function isMuslFromFilesystem() {
   try {
@@ -347,7 +321,7 @@ function isMuslFromChildProcess() {
 }
 
 // https://github.com/napi-rs/napi-rs/blob/2cdf5fd6fb26ba32aaa9a8e8d4ad5020536ce0de/examples/napi/index.cjs#L66
-// eslint-disable-next-line sonarjs/cognitive-complexity, sonarjs/function-return-type
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function getNapiNativeTarget(): string[] | string {
   switch (process.platform as Platform) {
     case 'android': {
@@ -475,15 +449,12 @@ export function getNapiNativeTargets() {
 }
 
 export function hasWasiTarget(targets?: string[]) {
-  return targets?.some(
-    target => parseTriple(target).platformArchABI === WASM32_WASI,
-  )
+  return targets?.some(target => parseTriple(target).platformArchABI === WASM32_WASI)
 }
 
 export function getSkipFallbackEnv(name: string) {
   const normalized = name
     .replace(/^@/, '')
-    // eslint-disable-next-line unicorn-x/prefer-string-replace-all
     .replace(/[^a-z0-9]+/gi, '_')
     .toUpperCase()
   return `SKIP_${normalized}_FALLBACK`

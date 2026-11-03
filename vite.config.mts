@@ -10,10 +10,7 @@ export default defineConfig({
     mdx({
       remarkPlugins: [remarkGfm],
       rehypePlugins: [
-        [
-          rehypeShiki,
-          { themes: { light: 'github-light', dark: 'github-dark' } },
-        ],
+        [rehypeShiki, { themes: { light: 'github-light', dark: 'github-dark' } }],
         rehypeSlug,
       ],
     }),

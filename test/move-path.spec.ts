@@ -86,8 +86,6 @@ describe('movePath', () => {
       throw Object.assign(new Error('permission denied'), { code: 'EACCES' })
     })
 
-    expect(() => movePath(from, path.join(root, 'to'))).toThrow(
-      'permission denied',
-    )
+    expect(() => movePath(from, path.join(root, 'to'))).toThrow('permission denied')
   })
 })

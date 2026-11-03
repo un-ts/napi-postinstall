@@ -21,9 +21,7 @@ const FALLBACK_MARKER = `
       true,
     )`
 
-/**
- * Injects the all-platform runtime fallback into a generated napi-rs loader.
- */
+/** Injects the all-platform runtime fallback into a generated napi-rs loader. */
 export function patch({ entry = 'index.js', name, append }: PatchOptions) {
   if (!name) {
     throw new Error('name is required')
@@ -70,9 +68,7 @@ if (require.main === module) {
   let [entry = 'index.js', name = ''] = process.argv.slice(2)
   if (!name) {
     if (entry.includes('.')) {
-      name = (
-        JSON.parse(fs.readFileSync('package.json', 'utf8')) as { name: string }
-      ).name
+      name = (JSON.parse(fs.readFileSync('package.json', 'utf8')) as { name: string }).name
     } else {
       name = entry
       // eslint-disable-next-line sonarjs/no-redundant-assignments

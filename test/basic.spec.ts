@@ -14,18 +14,12 @@ vi.mock('node:child_process', () => ({
 
 describe('napi-postinstall', () => {
   it('should check and prepare package', async () => {
-    await expect(
-      checkAndPreparePackage('rolldown', undefined, true),
-    ).resolves.not.toThrow()
+    await expect(checkAndPreparePackage('rolldown', undefined, true)).resolves.not.toThrow()
     await expect(checkAndPreparePackage('rolldown')).resolves.not.toThrow()
 
-    await expect(
-      checkAndPreparePackage('@swc/core', undefined, true),
-    ).resolves.not.toThrow()
+    await expect(checkAndPreparePackage('@swc/core', undefined, true)).resolves.not.toThrow()
 
-    await expect(
-      checkAndPreparePackage('unrs-resolver', undefined, true),
-    ).resolves.not.toThrow()
+    await expect(checkAndPreparePackage('unrs-resolver', undefined, true)).resolves.not.toThrow()
 
     await expect(
       checkAndPreparePackage('napi-postinstall'),
@@ -36,9 +30,7 @@ describe('napi-postinstall', () => {
 
   it('should encode package names for the skip env', () => {
     expect(getSkipFallbackEnv('my-package')).toBe('SKIP_MY_PACKAGE_FALLBACK')
-    expect(getSkipFallbackEnv('@scope/my-package')).toBe(
-      'SKIP_SCOPE_MY_PACKAGE_FALLBACK',
-    )
+    expect(getSkipFallbackEnv('@scope/my-package')).toBe('SKIP_SCOPE_MY_PACKAGE_FALLBACK')
     expect(getSkipFallbackEnv('x.js')).toBe('SKIP_X_JS_FALLBACK')
   })
 
@@ -48,30 +40,24 @@ describe('napi-postinstall', () => {
     expect(hasWasiTarget()).toBeUndefined()
   })
 
-  it(
-    'should process a WASI target without optionalDependencies',
-    { timeout: 30_000 },
-    async () => {
-      const packageJson: PackageJson = {
-        name: 'fake-wasi-package',
-        version: '1.0.0',
-        napi: {
-          binaryName: 'fake',
-          packageName: '@fake/binding',
-          targets: ['wasm32-wasip1-threads'],
-        },
-      }
-      const consoleError = vi
-        .spyOn(console, 'error')
-        .mockImplementation(vi.fn())
+  it('should process a WASI target without optionalDependencies', { timeout: 30_000 }, async () => {
+    const packageJson: PackageJson = {
+      name: 'fake-wasi-package',
+      version: '1.0.0',
+      napi: {
+        binaryName: 'fake',
+        packageName: '@fake/binding',
+        targets: ['wasm32-wasip1-threads'],
+      },
+    }
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(vi.fn())
 
-      try {
-        await expect(
-          checkAndPreparePackage(packageJson, false),
-        ).rejects.toThrow('Failed to install package')
-      } finally {
-        consoleError.mockRestore()
-      }
-    },
-  )
+    try {
+      await expect(checkAndPreparePackage(packageJson, false)).rejects.toThrow(
+        'Failed to install package',
+      )
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
 })

@@ -130,10 +130,7 @@ const loadErrors = []
 
 if (!nativeBinding && process.env['SKIP_<PACKAGE>_FALLBACK'] !== '1') {
   try {
-    nativeBinding = require('napi-postinstall/fallback')(
-      require.resolve('./package.json'),
-      true,
-    )
+    nativeBinding = require('napi-postinstall/fallback')(require.resolve('./package.json'), true)
     if (
       typeof __napiLoadedBindingTarget !== 'undefined' &&
       typeof nativeBinding.__napiBindingTarget === 'string'
@@ -254,10 +251,7 @@ export declare function checkAndPreparePackage(
 ): Promise<void>
 
 // napi-postinstall/fallback
-declare function fallback<T = unknown>(
-  packageJsonPath: string,
-  checkVersion?: boolean,
-): T
+declare function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean): T
 export = fallback
 
 // napi-postinstall/patch

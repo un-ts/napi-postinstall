@@ -27,11 +27,7 @@ interface RegistryHit {
   authorization: string | undefined
 }
 
-function createRegistry(
-  bindingName: string,
-  tarballName: string,
-  tarball: Buffer,
-) {
+function createRegistry(bindingName: string, tarballName: string, tarball: Buffer) {
   const hits: RegistryHit[] = []
   let url = ''
   const server = http.createServer((req, res) => {
@@ -118,9 +114,7 @@ describe('project npmrc', () => {
         await exec('npm', ['pack', '--pack-destination', root], {
           nodeOptions: { cwd: binding },
         })
-        const tarballName = fs
-          .readdirSync(root)
-          .find(file => file.endsWith('.tgz'))
+        const tarballName = fs.readdirSync(root).find(file => file.endsWith('.tgz'))
         if (!tarballName) {
           throw new Error('`npm pack` did not produce a tarball')
         }
@@ -151,16 +145,10 @@ describe('project npmrc', () => {
           )
 
           // a real install, so `require.resolve` from the library finds the host
-          const napiPostinstall = path.join(
-            project,
-            'node_modules',
-            'napi-postinstall',
-          )
-          fs.cpSync(
-            path.join(REPO_ROOT, 'lib'),
-            path.join(napiPostinstall, 'lib'),
-            { recursive: true },
-          )
+          const napiPostinstall = path.join(project, 'node_modules', 'napi-postinstall')
+          fs.cpSync(path.join(REPO_ROOT, 'lib'), path.join(napiPostinstall, 'lib'), {
+            recursive: true,
+          })
           fs.copyFileSync(
             path.join(REPO_ROOT, PACKAGE_JSON),
             path.join(napiPostinstall, PACKAGE_JSON),
@@ -218,16 +206,10 @@ describe('project npmrc', () => {
 
           expect(result.stderr).not.toContain('401')
           expect(result.exitCode).toBe(0)
-          expect(
-            fs.existsSync(path.join(project, 'node_modules', bindingName)),
-          ).toBe(true)
+          expect(fs.existsSync(path.join(project, 'node_modules', bindingName))).toBe(true)
 
           // every request, including the tarball, must carry the project token
-          expect(
-            registry.hits.filter(
-              hit => hit.authorization !== `Bearer ${TOKEN}`,
-            ),
-          ).toEqual([])
+          expect(registry.hits.filter(hit => hit.authorization !== `Bearer ${TOKEN}`)).toEqual([])
           expect(registry.hits.some(hit => hit.url.endsWith('.tgz'))).toBe(true)
           // relative `.npmrc` values are resolved against the project directory
           expect(fs.existsSync(path.join(project, 'npm-cache'))).toBe(true)
