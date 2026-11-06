@@ -19,6 +19,7 @@ import type { PackageJson } from './types.js'
  * @param checkVersion Whether to check version matching
  * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) {
   const packageJson = require(packageJsonPath) as PackageJson
 
@@ -96,7 +97,14 @@ function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) 
             paths: [pkgDir],
           }),
         ) as T
-      } catch {}
+      } catch (wasiError) {
+        if (error instanceof Error && wasiError instanceof Error) {
+          const hostError = error as Error & { cause?: unknown }
+          const wasiFailure = wasiError as Error & { cause?: unknown }
+          wasiFailure.cause ??= hostError.cause
+          hostError.cause = wasiFailure
+        }
+      }
     }
     throw error
   }
