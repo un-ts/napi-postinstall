@@ -19,6 +19,7 @@ import type { PackageJson } from './types.js'
  * @param checkVersion Whether to check version matching
  * @see https://github.com/un-ts/eslint-plugin-import-x/issues/337.
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) {
   const packageJson = require(packageJsonPath) as PackageJson
 
@@ -34,9 +35,9 @@ function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) 
     )
   }
 
-  if (process.versions.webcontainer) {
-    const bindingPkgName = `${napi.packageName}-${WASM32_WASI}`
+  const bindingPkgName = `${napi.packageName}-${WASM32_WASI}`
 
+  if (process.versions.webcontainer) {
     // napi keeps the WASI fallback out of `optionalDependencies` when it is not
     // the only target, so also accept the configured `napi.targets`.
     if (!optionalDependencies?.[bindingPkgName] && !hasWasiTarget(napi.targets)) {
@@ -84,7 +85,29 @@ function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) 
 
   delete require.cache[PKG_RESOLVED_PATH]
 
-  return require(pkgDir) as T
+  try {
+    return require(pkgDir) as T
+  } catch (error) {
+    // The loader may have cached the failed WASI lookup from before the install.
+    // Try the freshly installed binding directly before giving up on this run.
+    if (optionalDependencies?.[bindingPkgName] || hasWasiTarget(napi.targets)) {
+      try {
+        return require(
+          require.resolve(`${bindingPkgName}/${napi.binaryName}.wasi.cjs`, {
+            paths: [pkgDir],
+          }),
+        ) as T
+      } catch (wasiError) {
+        if (error instanceof Error && wasiError instanceof Error) {
+          const hostError = error as Error & { cause?: unknown }
+          const wasiFailure = wasiError as Error & { cause?: unknown }
+          wasiFailure.cause ??= hostError.cause
+          hostError.cause = wasiFailure
+        }
+      }
+    }
+    throw error
+  }
 }
 
 export = fallback
