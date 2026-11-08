@@ -14,9 +14,20 @@ describe('fallback', () => {
     delete process.versions.webcontainer
   })
 
-  it('should resolve napi package successfully and set skip env after processing', () => {
+  it('should resolve napi package successfully and restore the skip env after processing', () => {
     expect(fallback(require.resolve('unrs-resolver/package.json'))).toBe(unrsResolver)
-    expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBe('1')
+    expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBeUndefined()
+  })
+
+  it('should preserve a pre-existing skip env value', () => {
+    process.env.SKIP_UNRS_RESOLVER_FALLBACK = 'existing'
+
+    try {
+      expect(fallback(require.resolve('unrs-resolver/package.json'))).toBe(unrsResolver)
+      expect(process.env.SKIP_UNRS_RESOLVER_FALLBACK).toBe('existing')
+    } finally {
+      delete process.env.SKIP_UNRS_RESOLVER_FALLBACK
+    }
   })
 
   it('should support napi.targets without optionalDependencies', () => {
