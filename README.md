@@ -149,9 +149,12 @@ registry and authentication configuration. The block must run before the
 loader's final `if (!nativeBinding)` throw; `napi-patch` places it there
 automatically and guards it with `SKIP_<PACKAGE>_FALLBACK` (`<PACKAGE>` strips
 a leading `@` and replaces runs of non-alphanumeric characters with `_`, then
-uppercases; `@scope/my-package` becomes `SKIP_SCOPE_MY_PACKAGE_FALLBACK`). If that env is set and no
-binding was loaded, the loader's final check throws instead of starting another
-nested install.
+uppercases; `@scope/my-package` becomes `SKIP_SCOPE_MY_PACKAGE_FALLBACK`). While
+reloading the host package, `fallback()` sets that env temporarily and restores
+its previous value afterwards, so another copy of the host package can still run
+its own fallback. If the env is set before the loader runs and no binding was
+loaded, the loader's final check throws instead of starting another nested
+install.
 
 #### Patching a generated loader
 

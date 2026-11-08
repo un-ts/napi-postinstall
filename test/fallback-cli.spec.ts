@@ -41,7 +41,7 @@ describe('fallback CLI', () => {
         [expect.stringMatching(/lib[\\/]cli\.js$/), 'fake-host', '1.0.0', '0'],
         { cwd: pkgDir, stdio: 'inherit' },
       )
-      expect(process.env.SKIP_FAKE_HOST_FALLBACK).toBe('1')
+      expect(process.env.SKIP_FAKE_HOST_FALLBACK).toBeUndefined()
     } finally {
       delete process.env.SKIP_FAKE_HOST_FALLBACK
       fs.rmSync(root, { recursive: true, force: true })

@@ -79,4 +79,24 @@ describe('fallback WASI', () => {
       cleanup(root)
     }
   })
+
+  it('should not leak the skip guard to another host copy', () => {
+    const first = setup('module.exports = { fake: true }')
+    const second = setup('module.exports = { fake: true }')
+
+    const load = (hostDir: string) => {
+      if (process.env.SKIP_FAKE_HOST_FALLBACK === '1') {
+        throw new Error('Cannot find native binding')
+      }
+      return fallback<{ fake: boolean }>(path.join(hostDir, 'package.json'), true)
+    }
+
+    try {
+      expect(load(first.hostDir)).toEqual({ fake: true })
+      expect(load(second.hostDir)).toEqual({ fake: true })
+    } finally {
+      cleanup(first.root)
+      cleanup(second.root)
+    }
+  })
 })

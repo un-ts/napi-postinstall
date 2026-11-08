@@ -79,34 +79,47 @@ function fallback<T = unknown>(packageJsonPath: string, checkVersion?: boolean) 
     stdio: 'inherit',
   })
 
-  process.env[getSkipFallbackEnv(name)] = '1'
+  const skipFallbackEnv = getSkipFallbackEnv(name)
+  const previousSkipFallback = process.env[skipFallbackEnv]
 
-  const PKG_RESOLVED_PATH = require.resolve(pkgDir)
-
-  delete require.cache[PKG_RESOLVED_PATH]
+  process.env[skipFallbackEnv] = '1'
 
   try {
-    return require(pkgDir) as T
-  } catch (error) {
-    // The loader may have cached the failed WASI lookup from before the install.
-    // Try the freshly installed binding directly before giving up on this run.
-    if (optionalDependencies?.[bindingPkgName] || hasWasiTarget(napi.targets)) {
-      try {
-        return require(
-          require.resolve(`${bindingPkgName}/${napi.binaryName}.wasi.cjs`, {
-            paths: [pkgDir],
-          }),
-        ) as T
-      } catch (wasiError) {
-        if (error instanceof Error && wasiError instanceof Error) {
-          const hostError = error as Error & { cause?: unknown }
-          const wasiFailure = wasiError as Error & { cause?: unknown }
-          wasiFailure.cause ??= hostError.cause
-          hostError.cause = wasiFailure
+    const PKG_RESOLVED_PATH = require.resolve(pkgDir)
+
+    delete require.cache[PKG_RESOLVED_PATH]
+
+    try {
+      return require(pkgDir) as T
+    } catch (error) {
+      // The loader may have cached the failed WASI lookup from before the install.
+      // Try the freshly installed binding directly before giving up on this run.
+      if (optionalDependencies?.[bindingPkgName] || hasWasiTarget(napi.targets)) {
+        try {
+          return require(
+            require.resolve(`${bindingPkgName}/${napi.binaryName}.wasi.cjs`, {
+              paths: [pkgDir],
+            }),
+          ) as T
+        } catch (wasiError) {
+          if (error instanceof Error && wasiError instanceof Error) {
+            const hostError = error as Error & { cause?: unknown }
+            const wasiFailure = wasiError as Error & { cause?: unknown }
+            wasiFailure.cause ??= hostError.cause
+            hostError.cause = wasiFailure
+          }
         }
       }
+      throw error
     }
-    throw error
+  } finally {
+    // Only guard this reload; another copy of the host package may still need
+    // its own fallback.
+    if (previousSkipFallback === undefined) {
+      delete process.env[skipFallbackEnv]
+    } else {
+      process.env[skipFallbackEnv] = previousSkipFallback
+    }
   }
 }
 
